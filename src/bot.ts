@@ -155,6 +155,7 @@ bot.command(["start"], (ctx) => {
   })
 })
 bot.command(["reply"], async (ctx) => {
+  ctx.deleteMessage().catch(() => { })
   if (ctx.chatId != ctx.from?.id) {
     return replytoMsg({
       ctx,
@@ -180,7 +181,9 @@ bot.command(["reply"], async (ctx) => {
 })
 
 bot.command(["confess"], async (ctx) => {
+  
   if (ctx.chatId != ctx.from?.id) {
+    ctx.deleteMessage().catch(()=>{})
     return replytoMsg({
       ctx,
       message: "Confess command works only in bot DM to protect your anonimousity."
@@ -213,7 +216,7 @@ bot.command(["confess"], async (ctx) => {
         return
       }
       const pinMsg = await ctx.api.sendMessage(gID, ctx.match.trim(), { reply_markup: startBotMenu })
-      ctx.api.pinChatMessage(gID, pinMsg.message_id).catch(()=>{})
+      ctx.api.pinChatMessage(gID, pinMsg.message_id).catch(() => { })
     })
   }
 
