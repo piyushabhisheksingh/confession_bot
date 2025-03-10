@@ -215,7 +215,7 @@ bot.command(["confess"], async (ctx) => {
       if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID) {
         return
       }
-      ctx.api.sendMessage(gID, ctx.match.trim(), { reply_markup: startBotMenu })
+      ctx.api.sendMessage(gID, ctx.match.trim(), { reply_markup: startBotMenu }).catch(()=>{})
       // ctx.api.pinChatMessage(gID, pinMsg.message_id).catch(() => { })
     })
   }
