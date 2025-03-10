@@ -181,9 +181,9 @@ bot.command(["reply"], async (ctx) => {
 })
 
 bot.command(["confess"], async (ctx) => {
-  
+
   if (ctx.chatId != ctx.from?.id) {
-    ctx.deleteMessage().catch(()=>{})
+    ctx.deleteMessage().catch(() => { })
     return replytoMsg({
       ctx,
       message: "Confess command works only in bot DM to protect your anonimousity."
@@ -209,16 +209,17 @@ bot.command(["confess"], async (ctx) => {
   const messageConfirm = await ctx.reply(`Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${ctx.from.id.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
 
   ctx.api.pinChatMessage(ctx.chatId ?? 0, messageConfirm.message_id)
-  // const groups = await readChatIDAll()
-  // if (groups) {
-  //   groups.filter((id) => id < 0).forEach(async (gID) => {
-  //     if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID) {
-  //       return
-  //     }
-  //     ctx.api.sendMessage(gID, ctx.match.trim(), { reply_markup: startBotMenu }).catch(()=>{})
-  //     // ctx.api.pinChatMessage(gID, pinMsg.message_id).catch(() => { })
-  //   })
-  // }
+  const groups = await readChatIDAll()
+  if (groups) {
+    groups.filter((id) => id < 0).forEach(async (gID) => {
+      if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID) {
+        return
+      }
+      const message = "A new confession!!\nClick below to read and advice."
+      ctx.api.sendMessage(gID, message, { reply_markup: startBotMenu }).catch(() => { })
+      // ctx.api.pinChatMessage(gID, pinMsg.message_id).catch(() => { })
+    })
+  }
 
 })
 
@@ -283,7 +284,7 @@ bot.filter(ctx => ctx.chat?.id == CHAT_ID).hears(/.*/, async (
   ]
   ctx.api.sendMessage(chatID, message.join("\n"), {
     parse_mode: "MarkdownV2"
-  }).catch(()=>{})
+  }).catch(() => { })
 })
 const handle = run(bot, { runner: { fetch: { allowed_updates: ["chat_member", "chat_join_request", "message", "my_chat_member", "business_message"] } } });
 
