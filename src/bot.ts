@@ -283,7 +283,7 @@ bot.filter(ctx => ctx.chat?.id == CHAT_ID).hears(/.*/, async (
   ]
   ctx.api.sendMessage(chatID, message.join("\n"), {
     parse_mode: "MarkdownV2"
-  })
+  }).catch(()=>{})
 })
 const handle = run(bot, { runner: { fetch: { allowed_updates: ["chat_member", "chat_join_request", "message", "my_chat_member", "business_message"] } } });
 
