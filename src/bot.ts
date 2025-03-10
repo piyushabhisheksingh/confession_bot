@@ -171,6 +171,9 @@ bot.command(["reply"], async (ctx) => {
   if (linkChecker(message)) {
     return ctx.reply("Do not post link. Try again.");
   }
+  if (message.length == 0) {
+    return ctx.reply("Reply message can't be empty");
+  }
   const messageID = ctx.message?.reply_to_message?.link_preview_options?.url?.split("?comment=")[1] ?? 0
   if (messageID) {
     ctx.api.sendMessage(CHAT_ID, ctx.match.trim(), {
@@ -198,6 +201,9 @@ bot.command(["confess"], async (ctx) => {
   const message = ctx.match.trim();
   if (linkChecker(message)) {
     return ctx.reply("Do not post link. Try again.");
+  }
+  if (message.length == 0) {
+    return ctx.reply("Confession message can't be empty");
   }
   const postLink = await ctx.api.sendMessage(CHANNEL_ID, message)
   const postLinkEdited = await ctx.api.editMessageText(CHANNEL_ID, postLink.message_id, `Confession-${ctx.from.id.toString(Encryption)}-${postLink.message_id}\n` + message)
