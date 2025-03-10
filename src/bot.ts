@@ -10,7 +10,7 @@ import { escapeMetaCharacters, getGrammyNameLink, getRemainingTime, linkChecker,
 import { Menu } from "@grammyjs/menu";
 import { CHANNEL_ID, CHAT_ID, ConfessionLimitResetTime, Encryption, LOG_GROUP_ID, msgArr, startBotMsg, startGroupMsg } from "./schema/constants";
 import { SessionData } from "./schema/interfaces";
-import { confessionStorage, othersStorage, settingsStorage } from "./services/db";
+import { confessionStorage, readChatIDAll, settingsStorage } from "./services/db";
 
 // Create the bot.
 export type MyContext = Context & SessionFlavor<SessionData>;
@@ -53,12 +53,6 @@ bot.use(session({
     getSessionKey: getChatSessionKey,
     storage: settingsStorage
   },
-  channelList: {
-    initial: () => [],
-    getSessionKey: () => "1",
-    storage: othersStorage
-  }
-
 }));
 
 
@@ -212,13 +206,16 @@ bot.command(["confess"], async (ctx) => {
   const messageConfirm = await ctx.reply(`Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${ctx.from.id.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
 
   ctx.api.pinChatMessage(ctx.chatId ?? 0, messageConfirm.message_id)
-  const groups = ctx.session.channelList
-  groups.forEach((gID) => {
-    if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID) {
-      return
-    }
-    ctx.api.sendMessage(gID, ctx.match.trim(), { reply_markup: startBotMenu })
-  })
+  const groups = await readChatIDAll()
+  if (groups) {
+    groups.filter((id) => id < 0).forEach((gID) => {
+      if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID) {
+        return
+      }
+      ctx.api.sendMessage(gID, ctx.match.trim(), { reply_markup: startBotMenu })
+    })
+  }
+
 })
 
 bot.command("help", (ctx) => {

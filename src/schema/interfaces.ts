@@ -15,6 +15,5 @@ export interface Config {
 export interface SessionData {
   userdata: UserData
   config: Config
-  channelList: Array<number>
 }
 
