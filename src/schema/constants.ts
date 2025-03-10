@@ -9,12 +9,16 @@ export const startBotMsg = [
 ]
 
 export const msgArr = [
-
+  "-You can confess and ask people accross groups anonymously using this bot.",
+  "-You can use /confess <message> from the bot DM to post your confession accross groups.",
+  "-You receive messages in the confession bot DM if someone replies to your confession.",
+  "-You can reply back to the replies on your confessions from the bot DM by using /reply <message>.",
+  "-You can visit to the offical channel i.e @g_confession_channel to see other's confessions or you can use /start to get the link to the bot and the channel."
 ]
 
 export const CofessionsDailyLimit = 1
 
-export const ConfessionLimitResetTime = 86400000
+export const ConfessionLimitResetTime = 86400000/(24*12)
 
 export const LOG_GROUP_ID = -1002411523907
 export const CHAT_ID = -1002385443108
