@@ -209,16 +209,16 @@ bot.command(["confess"], async (ctx) => {
   const messageConfirm = await ctx.reply(`Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${ctx.from.id.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
 
   ctx.api.pinChatMessage(ctx.chatId ?? 0, messageConfirm.message_id)
-  const groups = await readChatIDAll()
-  if (groups) {
-    groups.filter((id) => id < 0).forEach(async (gID) => {
-      if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID) {
-        return
-      }
-      ctx.api.sendMessage(gID, ctx.match.trim(), { reply_markup: startBotMenu }).catch(()=>{})
-      // ctx.api.pinChatMessage(gID, pinMsg.message_id).catch(() => { })
-    })
-  }
+  // const groups = await readChatIDAll()
+  // if (groups) {
+  //   groups.filter((id) => id < 0).forEach(async (gID) => {
+  //     if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID) {
+  //       return
+  //     }
+  //     ctx.api.sendMessage(gID, ctx.match.trim(), { reply_markup: startBotMenu }).catch(()=>{})
+  //     // ctx.api.pinChatMessage(gID, pinMsg.message_id).catch(() => { })
+  //   })
+  // }
 
 })
 
