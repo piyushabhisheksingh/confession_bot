@@ -208,11 +208,12 @@ bot.command(["confess"], async (ctx) => {
   ctx.api.pinChatMessage(ctx.chatId ?? 0, messageConfirm.message_id)
   const groups = await readChatIDAll()
   if (groups) {
-    groups.filter((id) => id < 0).forEach((gID) => {
+    groups.filter((id) => id < 0).forEach(async (gID) => {
       if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID) {
         return
       }
-      ctx.api.sendMessage(gID, ctx.match.trim(), { reply_markup: startBotMenu })
+      const pinMsg = await ctx.api.sendMessage(gID, ctx.match.trim(), { reply_markup: startBotMenu })
+      ctx.api.pinChatMessage(gID, pinMsg.message_id).catch(()=>{})
     })
   }
 
