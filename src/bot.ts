@@ -279,7 +279,7 @@ bot.filter(ctx => ctx.chat?.id == CHAT_ID).hears(/.*/, async (
     `Comment By\\: ${getGrammyNameLink(messagedBy)}`,
     `Comment\\: ${escapeMetaCharacters(ctx.message?.text ?? "")}`,
     `Link\\: [see comment](${linkToComment})`,
-    `${escapeMetaCharacters("-Reply to this message using /reply <message> to reply anonymously.")}`
+    `${escapeMetaCharacters("-Reply to this message in the bot's DM using /reply <message> to reply anonymously.")}`
   ]
   ctx.api.sendMessage(chatID, message.join("\n"), {
     parse_mode: "MarkdownV2"
