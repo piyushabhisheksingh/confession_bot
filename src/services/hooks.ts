@@ -48,7 +48,7 @@ export const replyMarkdownV2 = async ({ ctx, message, replyMarkup }: { ctx: MyCo
 
 export const logGroup = async (ctx: MyContext) => {
   if (ctx.from && !ctx.session.config.isLogged) {
-    ctx.session.channelList = ctx.session.channelList.filter(ch => ch == CHANNEL_ID)
+    ctx.session.channelList = ctx.session.channelList.filter(ch => ch != ctx.chatId)
     ctx.session.channelList = [ctx.chatId ?? 0, ...ctx.session.channelList]
     ctx.session.config.isLogged = true
     const chatInfo = await ctx.api.getChat(ctx.chatId ?? 0)
