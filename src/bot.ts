@@ -143,7 +143,7 @@ bot.use(startGroupMenu)
 
 const startBotMenu = new Menu<MyContext>("dynamic-bot");
 startBotMenu
-  .url("Advice", (ctx) => ctx.session.userdata.confessions[0] && Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime ? `https://t.me/tg_confession_channel/${ctx.session.userdata.confessions[0]}` : `https://t.me/tg_confession_channel`).row()
+  .url("Advice", (ctx) => ctx.session.userdata.confessions[0] && (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime) ? `https://t.me/tg_confession_channel/${ctx.session.userdata.confessions[0]}` : `https://t.me/tg_confession_channel`).row()
 
 bot.use(startBotMenu)
 
