@@ -23,7 +23,7 @@ export const settingsStorage = supabaseAdapter<Config>({
 });
 
 export const readChatIDAll = async () => {
-  const { data, error } = await supabase.from(TableName1).select('id');
+  const { data, error } = await supabase.from(TableName2).select('id');
   if (error || !data) {
     return undefined
   }
