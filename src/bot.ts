@@ -155,8 +155,9 @@ bot.command(["start"], (ctx) => {
   })
 })
 bot.command(["reply"], async (ctx) => {
-  ctx.deleteMessage().catch(() => { })
+
   if (ctx.chatId != ctx.from?.id) {
+    ctx.deleteMessage().catch(() => { })
     return replytoMsg({
       ctx,
       message: "Reply command works only in bot DM to protect your anonimousity."
@@ -164,9 +165,11 @@ bot.command(["reply"], async (ctx) => {
   };
   const message = ctx.match.trim();
   if (linkChecker(message)) {
+    ctx.deleteMessage().catch(() => { })
     return ctx.reply("Do not post link. Try again.");
   }
   if (message.length == 0) {
+    ctx.deleteMessage().catch(() => { })
     return ctx.reply("Reply message can't be empty");
   }
   const messageID = ctx.message?.reply_to_message?.link_preview_options?.url?.split("?comment=")[1] ?? 0
@@ -190,6 +193,7 @@ bot.command(["confess"], async (ctx) => {
     })
   };
   if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0) {
+    ctx.deleteMessage().catch(() => { })
     return replytoMsg({
       ctx,
       message: `You can post confession after ${getRemainingTime(ctx.session.userdata.confessionTime + ConfessionLimitResetTime, Date.now())}`
@@ -197,9 +201,11 @@ bot.command(["confess"], async (ctx) => {
   }
   const message = ctx.match.trim();
   if (linkChecker(message)) {
+    ctx.deleteMessage().catch(() => { })
     return ctx.reply("Do not post link. Try again.");
   }
   if (message.length == 0) {
+    ctx.deleteMessage().catch(() => { })
     return ctx.reply("Confession message can't be empty");
   }
   const postLink = await ctx.api.sendMessage(CHANNEL_ID, message)
