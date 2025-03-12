@@ -66,7 +66,6 @@ export const logGroup = async (ctx: MyContext) => {
 
 export const linkChecker = (text: string) => {
   return text.toLowerCase().includes('t.me') ||
-    text.toLowerCase().includes('@') ||
     text.toLowerCase().includes('http') ||
     text.toLowerCase().includes('www')
 }
