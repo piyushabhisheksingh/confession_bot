@@ -223,6 +223,7 @@ bot.command(["reply"], async (ctx) => {
     ctx.deleteMessage().catch(() => { })
     return ctx.reply("Reply message can't be empty");
   }
+  
   const messageID = ctx.message?.reply_to_message?.link_preview_options?.url?.split("?comment=")[1] ?? 0
   if (messageID) {
     ctx.api.sendMessage(CHAT_ID, ctx.match.trim(), {
@@ -328,13 +329,13 @@ bot.filter(ctx => ctx.chat?.id == CHAT_ID).hears(/.*/, async (
       message: `${getGrammyNameLink(ctx.from)}\\, message deleted as it contains link\\.`
     })
   }
-  const forward_origin = ctx.message?.reply_to_message?.forward_origin as { message_id?: string }
+  const forward_origin = ctx.message?.reply_to_story?.id
   const chatID = parseInt(ctx.message?.reply_to_message?.text?.split("\n")[0].split('-')[1] ?? "0", Encryption)
   const confessionID = ctx.message?.reply_to_message?.text?.split("\n")[0]
   const messagedBy = ctx.message?.from
   const messageID = ctx.message?.message_id ?? 0
   if (chatID == 0 || messagedBy == undefined || confessionID == undefined) return;
-  const linkToComment = "https://t.me/tg_confession_channel/" + (forward_origin?.message_id ?? "0") + "?comment=" + ctx.message?.message_id
+  const linkToComment = "https://t.me/tg_confession_channel/" + (forward_origin ?? "0") + "?comment=" + ctx.message?.message_id
   const message = [
     `Confession ID\\: ${escapeMetaCharacters(confessionID)}`,
     `Comment By\\: ${getGrammyNameLink(messagedBy)}`,
