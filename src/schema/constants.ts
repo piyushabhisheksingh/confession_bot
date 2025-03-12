@@ -25,5 +25,5 @@ export const CHAT_ID = -1002385443108
 export const CHANNEL_ID = -1002485358730
 export const BOT_ID = 7089536486
 export const REVIEW_ID = -1002525866821
-export const BACKUP_ID = -1004755339896
+export const BACKUP_ID = -1002552730710
 export const Encryption = 32
