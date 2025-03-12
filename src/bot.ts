@@ -213,20 +213,22 @@ bot.command(["confess"], async (ctx) => {
   ctx.session.userdata.confessions = [{ id: postLink.message_id }, ...ctx.session.userdata.confessions]
   ctx.session.userdata.confessionTime = Date.now()
   const messageConfirm = await ctx.reply(`Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${ctx.from.id.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
-
   ctx.api.pinChatMessage(ctx.chatId ?? 0, messageConfirm.message_id)
+})
+
+bot.filter(ctx => ctx.chat?.id == CHANNEL_ID).command("broadcast", async (ctx) => {
+  ctx.deleteMessage().catch(() => { })
   const groups = await readChatIDAll()
   if (groups) {
+    const linkToComment = "https://t.me/tg_confession_channel/" + (ctx.msg.reply_to_message?.message_id ?? "0")
+    ctx.api.pinChatMessage(CHANNEL_ID, ctx.msg.reply_to_message?.message_id ?? 0).catch(() => { })
     groups.filter((id) => id < 0).forEach(async (gID) => {
       if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID) {
         return
       }
-      const message = "A new confession!!\nClick below to read and advice."
-      ctx.api.sendMessage(gID, message, { reply_markup: startBotMenu }).catch(() => { })
-      // ctx.api.pinChatMessage(gID, pinMsg.message_id).catch(() => { })
+      ctx.api.sendMessage(gID, linkToComment).catch(() => { })
     })
   }
-
 })
 
 bot.command("help", (ctx) => {
@@ -240,6 +242,7 @@ bot.command("help", (ctx) => {
 bot.api.setMyCommands([
   { command: "start", description: "to start" },
   { command: "confess", description: "to confess" },
+  { command: "broadcast", description: "to broadcast everywhere" },
   { command: "reply", description: "reply to the confess" },
   { command: "help", description: "to get help" }
 ]);
@@ -292,7 +295,7 @@ bot.filter(ctx => ctx.chat?.id == CHAT_ID).hears(/.*/, async (
     parse_mode: "MarkdownV2"
   }).catch(() => { })
 })
-const handle = run(bot, { runner: { fetch: { allowed_updates: ["chat_member", "chat_join_request", "message", "my_chat_member", "business_message"] } } });
+const handle = run(bot, { runner: { fetch: { allowed_updates: ["chat_member", "chat_join_request", "message", "my_chat_member", "business_message", "channel_post", "edited_channel_post", "callback_query"] } } });
 
 process.once("SIGINT", () => {
   return handle.stop().then(() => {
