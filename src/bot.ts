@@ -6,9 +6,9 @@ import { autoRetry } from "@grammyjs/auto-retry";
 import { limit } from "@grammyjs/ratelimiter";
 import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { Bottleneck } from "@grammyjs/transformer-throttler/dist/deps.node";
-import { escapeMetaCharacters, getGrammyNameLink, getRemainingTime, linkChecker, logGroup, replyMarkdownV2, replyMsg, replytoMsg } from "./services/hooks";
+import { escapeMetaCharacters, getGrammyLink, getGrammyName, getGrammyNameLink, getRemainingTime, linkChecker, logGroup, replyMarkdownV2, replyMsg, replytoMsg } from "./services/hooks";
 import { Menu } from "@grammyjs/menu";
-import { CHANNEL_ID, CHAT_ID, ConfessionLimitResetTime, Encryption, LOG_GROUP_ID, msgArr, REVIEW_ID, startBotMsg, startGroupMsg } from "./schema/constants";
+import { BACKUP_ID, CHANNEL_ID, CHAT_ID, ConfessionLimitResetTime, Encryption, LOG_GROUP_ID, msgArr, REVIEW_ID, startBotMsg, startGroupMsg } from "./schema/constants";
 import { SessionData } from "./schema/interfaces";
 import { confessionStorage, readChatIDAll, readID, settingsStorage, writeID } from "./services/db";
 
@@ -181,7 +181,7 @@ reviewBotMenu.text("Broadcast", async (ctx) => {
     const linkToComment = "https://t.me/tg_confession_channel/" + (postLink.message_id ?? "0")
     ctx.api.pinChatMessage(CHANNEL_ID, postLink?.message_id ?? 0).catch(() => { })
     groups.filter((id) => id < 0).forEach(async (gID) => {
-      if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID || gID == REVIEW_ID) {
+      if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID || gID == REVIEW_ID || gID == BACKUP_ID) {
         return
       }
       ctx.api.sendMessage(gID, linkToComment).catch(() => { })
@@ -223,7 +223,7 @@ bot.command(["reply"], async (ctx) => {
     ctx.deleteMessage().catch(() => { })
     return ctx.reply("Reply message can't be empty");
   }
-  
+
   const messageID = ctx.message?.reply_to_message?.link_preview_options?.url?.split("?comment=")[1] ?? 0
   if (messageID) {
     ctx.api.sendMessage(CHAT_ID, ctx.match.trim(), {
@@ -262,6 +262,7 @@ bot.command(["confess"], async (ctx) => {
   }
   const postLink = await ctx.api.sendMessage(REVIEW_ID, message, { reply_markup: reviewBotMenu })
   const postLinkEdited = await ctx.api.editMessageText(REVIEW_ID, postLink.message_id, `${ctx.from.id.toString(Encryption)}\n` + message, { reply_markup: reviewBotMenu })
+  await ctx.api.sendMessage(BACKUP_ID, getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + message)
   // ctx.session.userdata.confessions = [{ id: postLink.message_id }, ...ctx.session.userdata.confessions]
   ctx.session.userdata.confessionTime = Date.now()
   // const messageConfirm = await ctx.reply(`Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${ctx.from.id.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
@@ -275,7 +276,7 @@ bot.filter(ctx => ctx.chat?.id == CHANNEL_ID).command("broadcast", async (ctx) =
     const linkToComment = "https://t.me/tg_confession_channel/" + (ctx.msg.reply_to_message?.message_id ?? "0")
     ctx.api.pinChatMessage(CHANNEL_ID, ctx.msg.reply_to_message?.message_id ?? 0).catch(() => { })
     groups.filter((id) => id < 0).forEach(async (gID) => {
-      if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID || gID == REVIEW_ID) {
+      if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID || gID == REVIEW_ID || gID == BACKUP_ID) {
         return
       }
       ctx.api.sendMessage(gID, linkToComment).catch(() => { })
@@ -314,7 +315,7 @@ bot.catch((err) => {
     console.error("Unknown error:", e);
   }
 });
-bot.filter(ctx => ctx.chat?.id != CHAT_ID && ctx.chat?.id != CHANNEL_ID && ctx.chat?.id != LOG_GROUP_ID).hears(/.*/, async (
+bot.filter(ctx => ctx.chat?.id != CHAT_ID && ctx.chat?.id != CHANNEL_ID && ctx.chat?.id != LOG_GROUP_ID && ctx.chat?.id != BACKUP_ID).hears(/.*/, async (
   ctx
 ) => {
   logGroup(ctx)
