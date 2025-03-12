@@ -8,9 +8,9 @@ import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { Bottleneck } from "@grammyjs/transformer-throttler/dist/deps.node";
 import { escapeMetaCharacters, getGrammyNameLink, getRemainingTime, linkChecker, logGroup, replyMarkdownV2, replyMsg, replytoMsg } from "./services/hooks";
 import { Menu } from "@grammyjs/menu";
-import { CHANNEL_ID, CHAT_ID, ConfessionLimitResetTime, Encryption, LOG_GROUP_ID, msgArr, startBotMsg, startGroupMsg } from "./schema/constants";
+import { CHANNEL_ID, CHAT_ID, ConfessionLimitResetTime, Encryption, LOG_GROUP_ID, msgArr, REVIEW_ID, startBotMsg, startGroupMsg } from "./schema/constants";
 import { SessionData } from "./schema/interfaces";
-import { confessionStorage, readChatIDAll, settingsStorage } from "./services/db";
+import { confessionStorage, readChatIDAll, readID, settingsStorage, writeID } from "./services/db";
 
 // Create the bot.
 export type MyContext = Context & SessionFlavor<SessionData>;
@@ -147,6 +147,57 @@ startBotMenu
 
 bot.use(startBotMenu)
 
+
+const reviewBotMenu = new Menu<MyContext>("review-bot");
+reviewBotMenu.text("Approve", async (ctx) => {
+  const msg = ctx.msg?.text ?? ""
+  const userID = parseInt(msg.split("\n")[0], Encryption)
+  const message = msg.split("\n").slice(1).join('\n')
+  const postLink = await ctx.api.sendMessage(CHANNEL_ID, message)
+  const postLinkEdited = await ctx.api.editMessageText(CHANNEL_ID, postLink.message_id, `Confession-${userID.toString(Encryption)}-${postLink.message_id}\n` + message)
+  const userData = await readID(userID.toString())
+  if (userData == undefined) return;
+  writeID(userID.toString(), { ...userData, confessions: [{ id: postLink.message_id }, ...userData?.confessions] })
+  const messageConfirm = await ctx.api.sendMessage(userID, `Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${userID.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
+  ctx.api.pinChatMessage(userID ?? 0, messageConfirm.message_id)
+  ctx.deleteMessage().catch(() => { })
+  ctx.menu.close()
+}).row()
+reviewBotMenu.text("Broadcast", async (ctx) => {
+  const msg = ctx.msg?.text ?? ""
+  const userID = parseInt(msg.split("\n")[0], Encryption)
+  const message = msg.split("\n").slice(1).join('\n')
+  const postLink = await ctx.api.sendMessage(CHANNEL_ID, message)
+  const postLinkEdited = await ctx.api.editMessageText(CHANNEL_ID, postLink.message_id, `Confession-${userID.toString(Encryption)}-${postLink.message_id}\n` + message)
+  const userData = await readID(userID.toString())
+  if (userData == undefined) return;
+  writeID(userID.toString(), { ...userData, confessions: [{ id: postLink.message_id }, ...userData?.confessions] })
+  const messageConfirm = await ctx.api.sendMessage(userID, `Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${userID.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
+  ctx.api.pinChatMessage(userID ?? 0, messageConfirm.message_id)
+  ctx.deleteMessage().catch(() => { })
+  ctx.menu.close()
+  const groups = await readChatIDAll()
+  if (groups) {
+    const linkToComment = "https://t.me/tg_confession_channel/" + (postLink.message_id ?? "0")
+    ctx.api.pinChatMessage(CHANNEL_ID, postLink?.message_id ?? 0).catch(() => { })
+    groups.filter((id) => id < 0).forEach(async (gID) => {
+      if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID || gID == REVIEW_ID) {
+        return
+      }
+      ctx.api.sendMessage(gID, linkToComment).catch(() => { })
+    })
+  }
+}).row()
+reviewBotMenu.text("Discard", async (ctx) => {
+  const msg = ctx.msg?.text ?? ""
+  const userID = parseInt(msg.split("\n")[0], Encryption)
+  const message = msg.split("\n").slice(1).join('\n')
+  const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot as it did not passed the review`, { parse_mode: "MarkdownV2" });
+  ctx.menu.close()
+}).row()
+
+bot.use(reviewBotMenu)
+
 bot.command(["start"], (ctx) => {
   replytoMsg({
     ctx,
@@ -154,8 +205,8 @@ bot.command(["start"], (ctx) => {
     replyMarkup: ctx.chatId == ctx.from?.id ? startBotMenu : startGroupMenu
   })
 })
-bot.command(["reply"], async (ctx) => {
 
+bot.command(["reply"], async (ctx) => {
   if (ctx.chatId != ctx.from?.id) {
     ctx.deleteMessage().catch(() => { })
     return replytoMsg({
@@ -208,12 +259,12 @@ bot.command(["confess"], async (ctx) => {
     ctx.deleteMessage().catch(() => { })
     return ctx.reply("Confession message can't be empty");
   }
-  const postLink = await ctx.api.sendMessage(CHANNEL_ID, message)
-  const postLinkEdited = await ctx.api.editMessageText(CHANNEL_ID, postLink.message_id, `Confession-${ctx.from.id.toString(Encryption)}-${postLink.message_id}\n` + message)
-  ctx.session.userdata.confessions = [{ id: postLink.message_id }, ...ctx.session.userdata.confessions]
+  const postLink = await ctx.api.sendMessage(REVIEW_ID, message, { reply_markup: reviewBotMenu })
+  const postLinkEdited = await ctx.api.editMessageText(REVIEW_ID, postLink.message_id, `${ctx.from.id.toString(Encryption)}\n` + message, { reply_markup: reviewBotMenu })
+  // ctx.session.userdata.confessions = [{ id: postLink.message_id }, ...ctx.session.userdata.confessions]
   ctx.session.userdata.confessionTime = Date.now()
-  const messageConfirm = await ctx.reply(`Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${ctx.from.id.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
-  ctx.api.pinChatMessage(ctx.chatId ?? 0, messageConfirm.message_id)
+  // const messageConfirm = await ctx.reply(`Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${ctx.from.id.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
+  // ctx.api.pinChatMessage(ctx.chatId ?? 0, messageConfirm.message_id)
 })
 
 bot.filter(ctx => ctx.chat?.id == CHANNEL_ID).command("broadcast", async (ctx) => {
@@ -223,7 +274,7 @@ bot.filter(ctx => ctx.chat?.id == CHANNEL_ID).command("broadcast", async (ctx) =
     const linkToComment = "https://t.me/tg_confession_channel/" + (ctx.msg.reply_to_message?.message_id ?? "0")
     ctx.api.pinChatMessage(CHANNEL_ID, ctx.msg.reply_to_message?.message_id ?? 0).catch(() => { })
     groups.filter((id) => id < 0).forEach(async (gID) => {
-      if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID) {
+      if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID || gID == REVIEW_ID) {
         return
       }
       ctx.api.sendMessage(gID, linkToComment).catch(() => { })

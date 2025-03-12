@@ -13,7 +13,7 @@ export const msgArr = [
   "-You can use /confess <message> from the bot DM to post your confession accross groups.",
   "-You receive messages in the confession bot DM if someone replies to your confession.",
   "-You can reply back to the replies on your confessions from the bot DM by using /reply <message>.",
-  "-You can visit to the offical channel i.e @g_confession_channel to see other's confessions or you can use /start to get the link to the bot and the channel."
+  "-You can visit to the offical channel i.e @tg_confession_channel to see other's confessions or you can use /start to get the link to the bot and the channel."
 ]
 
 export const CofessionsDailyLimit = 1
@@ -24,4 +24,5 @@ export const LOG_GROUP_ID = -1002411523907
 export const CHAT_ID = -1002385443108
 export const CHANNEL_ID = -1002485358730
 export const BOT_ID = 7089536486
+export const REVIEW_ID = -1002525866821
 export const Encryption = 32

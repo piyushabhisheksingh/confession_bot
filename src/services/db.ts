@@ -29,3 +29,16 @@ export const readChatIDAll = async () => {
   }
   return data.map(item => JSON.parse(item.id)) as Array<number>
 }
+
+export const readID = async (id: string) => {
+  const { data, error } = await supabase.from(TableName1).select(TableName1).eq('id', id).single();
+  if (error || !data) {
+    return undefined
+  }
+  return JSON.parse(data.session) as UserData
+}
+
+export const writeID = async (id: string, value: UserData) => {
+  const input = { id: Number(id), session: JSON.stringify(value) };
+  await supabase.from(TableName1).upsert(input);
+}
