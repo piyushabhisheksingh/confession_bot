@@ -201,7 +201,7 @@ reviewBotMenu.text("Ban", async (ctx) => {
   const msg = ctx.msg?.text ?? ""
   const userID = parseInt(msg.split("\n")[0], Encryption)
   const message = msg.split("\n").slice(1).join('\n')
-  ctx.session.userdata.isBanned = true
+  ctx.session.userdata = {...ctx.session.userdata, isBanned: true}
   const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
   ctx.menu.close()
 }).row()
