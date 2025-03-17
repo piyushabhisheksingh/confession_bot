@@ -44,12 +44,13 @@ bot.use(session({
     initial: () => ({
       confessionTime: 0,
       confessions: [],
+      isBanned: false
     }),
     getSessionKey: getUserSessionKey,
     storage: confessionStorage
   },
   config: {
-    initial: () => { return { isLogged: false, banned: [] } },
+    initial: () => { return { isLogged: false } },
     getSessionKey: getChatSessionKey,
     storage: settingsStorage
   },
@@ -200,8 +201,7 @@ reviewBotMenu.text("Ban", async (ctx) => {
   const msg = ctx.msg?.text ?? ""
   const userID = parseInt(msg.split("\n")[0], Encryption)
   const message = msg.split("\n").slice(1).join('\n')
-  ctx.session.config.banned = ctx.session.config.banned.filter(item => item != userID)
-  ctx.session.config.banned = [userID, ...ctx.session.config.banned]
+  ctx.session.userdata.isBanned = true
   const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
   ctx.menu.close()
 }).row()
@@ -215,15 +215,15 @@ bot.command(["start"], (ctx) => {
     replyMarkup: ctx.chatId == ctx.from?.id ? startBotMenu : startGroupMenu
   })
 })
-bot.filter(ctx=> ctx.chatId == REVIEW_ID).command(["unban"], async (ctx) => {
+bot.filter(ctx => ctx.chatId == REVIEW_ID).command(["unban"], async (ctx) => {
   const userID = Number(ctx.match.trim());
-  if(!Number.isNaN(userID)){
-    ctx.session.config.banned = ctx.session.config.banned.filter(item => item != userID)
+  if (!Number.isNaN(userID)) {
+    ctx.session.userdata.isBanned = false
     ctx.reply("User unbanned")
   }
 })
 bot.command(["reply"], async (ctx) => {
-  if(ctx.from && ctx.session.config.banned.includes(ctx.from.id)){
+  if (ctx.from && ctx.session.userdata.isBanned) {
     const message = ctx.match.trim();
     const messageConfirm = await ctx.api.sendMessage(ctx.from.id, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
     await ctx.api.sendMessage(REVIEW_ID, getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + message)
@@ -283,7 +283,7 @@ bot.command(["confess"], async (ctx) => {
     return ctx.reply("Confession message can't be empty");
   }
   const postLink = await ctx.api.sendMessage(REVIEW_ID, message, { reply_markup: reviewBotMenu })
-  if(ctx.from && ctx.session.config.banned.includes(ctx.from.id)){
+  if (ctx.from && ctx.from && ctx.session.userdata.isBanned) {
     const messageConfirm = await ctx.api.sendMessage(ctx.from.id, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
     await ctx.api.sendMessage(REVIEW_ID, getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + message)
     await ctx.api.sendMessage(BACKUP_ID, getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + message)

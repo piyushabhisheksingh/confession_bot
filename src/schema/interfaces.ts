@@ -5,11 +5,11 @@ export interface UserData {
       id: number
     }
   >
+  isBanned: boolean
 
 }
 export interface Config {
   isLogged: boolean,
-  banned: Array<number>
 }
 
 
