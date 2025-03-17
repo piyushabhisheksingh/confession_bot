@@ -201,7 +201,11 @@ reviewBotMenu.text("Ban", async (ctx) => {
   const msg = ctx.msg?.text ?? ""
   const userID = parseInt(msg.split("\n")[0], Encryption)
   const message = msg.split("\n").slice(1).join('\n')
-  ctx.session.userdata = {...ctx.session.userdata, isBanned: true}
+  const userdata = await readID(userID.toString())
+  if(!userdata){
+    return;
+  }
+  await writeID(userID.toString(), {...userdata, isBanned: true})
   const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
   ctx.menu.close()
 }).row()
@@ -218,7 +222,11 @@ bot.command(["start"], (ctx) => {
 bot.filter(ctx => ctx.chatId == REVIEW_ID).command(["unban"], async (ctx) => {
   const userID = Number(ctx.match.trim());
   if (!Number.isNaN(userID)) {
-    ctx.session.userdata.isBanned = false
+    const userdata = await readID(userID.toString())
+    if(!userdata){
+      return;
+    }
+    await writeID(userID.toString(), {...userdata, isBanned: false})
     ctx.reply("User unbanned")
   }
 })
