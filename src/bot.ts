@@ -234,8 +234,8 @@ bot.command(["reply"], async (ctx) => {
   if (ctx.from && ctx.session.userdata.isBanned) {
     const message = ctx.match.trim();
     const messageConfirm = await ctx.api.sendMessage(ctx.from.id, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
-    await ctx.api.sendMessage(REVIEW_ID, getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + message)
-    await ctx.api.sendMessage(BACKUP_ID, getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + message)
+    await ctx.api.sendMessage(REVIEW_ID, getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + message)
+    await ctx.api.sendMessage(BACKUP_ID, getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + message)
     return;
   }
   if (ctx.chatId != ctx.from?.id) {
@@ -293,8 +293,8 @@ bot.command(["confess"], async (ctx) => {
   const postLink = await ctx.api.sendMessage(REVIEW_ID, message, { reply_markup: reviewBotMenu })
   if (ctx.from && ctx.from && ctx.session.userdata.isBanned) {
     const messageConfirm = await ctx.api.sendMessage(ctx.from.id, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
-    await ctx.api.sendMessage(REVIEW_ID, getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + message)
-    await ctx.api.sendMessage(BACKUP_ID, getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + message)
+    await ctx.api.sendMessage(REVIEW_ID, getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + message)
+    await ctx.api.sendMessage(BACKUP_ID, getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + message)
     ctx.session.userdata.confessionTime = Date.now()
     return;
   }
