@@ -206,6 +206,8 @@ reviewBotMenu.text("Ban", async (ctx) => {
     return;
   }
   await writeID(userID.toString(), {...userdata, isBanned: true})
+  await ctx.reply(`${userID} banned` + '\n' + message)
+
   const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
   ctx.menu.close()
 }).row()
