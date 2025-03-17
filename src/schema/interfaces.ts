@@ -9,6 +9,7 @@ export interface UserData {
 }
 export interface Config {
   isLogged: boolean,
+  banned: Array<number>
 }
 
 

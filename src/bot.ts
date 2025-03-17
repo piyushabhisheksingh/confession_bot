@@ -49,7 +49,7 @@ bot.use(session({
     storage: confessionStorage
   },
   config: {
-    initial: () => { return { isLogged: false } },
+    initial: () => { return { isLogged: false, banned: [] } },
     getSessionKey: getChatSessionKey,
     storage: settingsStorage
   },
@@ -196,6 +196,16 @@ reviewBotMenu.text("Discard", async (ctx) => {
   ctx.menu.close()
 }).row()
 
+reviewBotMenu.text("Ban", async (ctx) => {
+  const msg = ctx.msg?.text ?? ""
+  const userID = parseInt(msg.split("\n")[0], Encryption)
+  const message = msg.split("\n").slice(1).join('\n')
+  ctx.session.config.banned = ctx.session.config.banned.filter(item => item != userID)
+  ctx.session.config.banned = [userID, ...ctx.session.config.banned]
+  const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
+  ctx.menu.close()
+}).row()
+
 bot.use(reviewBotMenu)
 
 bot.command(["start"], (ctx) => {
@@ -205,8 +215,21 @@ bot.command(["start"], (ctx) => {
     replyMarkup: ctx.chatId == ctx.from?.id ? startBotMenu : startGroupMenu
   })
 })
-
+bot.filter(ctx=> ctx.chatId == REVIEW_ID).command(["unban"], async (ctx) => {
+  const userID = Number(ctx.match.trim());
+  if(!Number.isNaN(userID)){
+    ctx.session.config.banned = ctx.session.config.banned.filter(item => item != userID)
+    ctx.reply("User unbanned")
+  }
+})
 bot.command(["reply"], async (ctx) => {
+  if(ctx.from && ctx.session.config.banned.includes(ctx.from.id)){
+    const message = ctx.match.trim();
+    const messageConfirm = await ctx.api.sendMessage(ctx.from.id, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
+    await ctx.api.sendMessage(REVIEW_ID, getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + message)
+    await ctx.api.sendMessage(BACKUP_ID, getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + message)
+    return;
+  }
   if (ctx.chatId != ctx.from?.id) {
     ctx.deleteMessage().catch(() => { })
     return replytoMsg({
@@ -236,7 +259,6 @@ bot.command(["reply"], async (ctx) => {
 })
 
 bot.command(["confess"], async (ctx) => {
-
   if (ctx.chatId != ctx.from?.id) {
     ctx.deleteMessage().catch(() => { })
     return replytoMsg({
@@ -261,6 +283,13 @@ bot.command(["confess"], async (ctx) => {
     return ctx.reply("Confession message can't be empty");
   }
   const postLink = await ctx.api.sendMessage(REVIEW_ID, message, { reply_markup: reviewBotMenu })
+  if(ctx.from && ctx.session.config.banned.includes(ctx.from.id)){
+    const messageConfirm = await ctx.api.sendMessage(ctx.from.id, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
+    await ctx.api.sendMessage(REVIEW_ID, getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + message)
+    await ctx.api.sendMessage(BACKUP_ID, getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + message)
+    ctx.session.userdata.confessionTime = Date.now()
+    return;
+  }
   const postLinkEdited = await ctx.api.editMessageText(REVIEW_ID, postLink.message_id, `${ctx.from.id.toString(Encryption)}\n` + message, { reply_markup: reviewBotMenu })
   await ctx.api.sendMessage(BACKUP_ID, getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + message)
   // ctx.session.userdata.confessions = [{ id: postLink.message_id }, ...ctx.session.userdata.confessions]
