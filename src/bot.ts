@@ -324,44 +324,6 @@ bot.filter(ctx => ctx.chat?.id == CHANNEL_ID).command("broadcast", async (ctx) =
   }
 })
 
-bot.command("help", (ctx) => {
-  replyMsg({
-    ctx,
-    message: msgArr.join('\n')
-  })
-})
-
-
-bot.api.setMyCommands([
-  { command: "start", description: "to start" },
-  { command: "confess", description: "to confess" },
-  { command: "broadcast", description: "to broadcast everywhere" },
-  { command: "reply", description: "reply to the confess" },
-  { command: "stats", description: "to get the bot stats" },
-  { command: "help", description: "to get help" }
-]);
-
-// catch Errors
-bot.catch((err) => {
-  const ctx = err.ctx;
-  console.error(`Error while handling update ${ctx.update.update_id}:`);
-  const e = err.error;
-  if (e instanceof GrammyError) {
-    // oopsError(ctx)
-    console.error("Error in request:", e.description);
-  } else if (e instanceof HttpError) {
-    // oopsError(ctx)
-    console.error("Could not contact Telegram:", e);
-  } else {
-    console.error("Unknown error:", e);
-  }
-});
-bot.filter(ctx => ctx.chat?.id != CHAT_ID && ctx.chat?.id != CHANNEL_ID && ctx.chat?.id != LOG_GROUP_ID && ctx.chat?.id != BACKUP_ID).hears(/.*/, async (
-  ctx
-) => {
-  logGroup(ctx)
-})
-
 bot.command("stats", async (ctx) => {
 
   let sessions = await readChatIDAll()
@@ -402,6 +364,46 @@ bot.filter(ctx => ctx.chat?.id == CHAT_ID).hears(/.*/, async (
     parse_mode: "MarkdownV2"
   }).catch(() => { })
 })
+
+bot.filter(ctx => ctx.chat?.id != CHAT_ID && ctx.chat?.id != CHANNEL_ID && ctx.chat?.id != LOG_GROUP_ID && ctx.chat?.id != BACKUP_ID).hears(/.*/, async (
+  ctx
+) => {
+  logGroup(ctx)
+})
+
+bot.command("help", (ctx) => {
+  replyMsg({
+    ctx,
+    message: msgArr.join('\n')
+  })
+})
+
+
+bot.api.setMyCommands([
+  { command: "start", description: "to start" },
+  { command: "confess", description: "to confess" },
+  { command: "broadcast", description: "to broadcast everywhere" },
+  { command: "reply", description: "reply to the confess" },
+  { command: "stats", description: "to get the bot stats" },
+  { command: "help", description: "to get help" }
+]);
+
+// catch Errors
+bot.catch((err) => {
+  const ctx = err.ctx;
+  console.error(`Error while handling update ${ctx.update.update_id}:`);
+  const e = err.error;
+  if (e instanceof GrammyError) {
+    // oopsError(ctx)
+    console.error("Error in request:", e.description);
+  } else if (e instanceof HttpError) {
+    // oopsError(ctx)
+    console.error("Could not contact Telegram:", e);
+  } else {
+    console.error("Unknown error:", e);
+  }
+});
+
 const handle = run(bot, { runner: { fetch: { allowed_updates: ["chat_member", "chat_join_request", "message", "my_chat_member", "business_message", "channel_post", "edited_channel_post", "callback_query"] } } });
 
 process.once("SIGINT", () => {
