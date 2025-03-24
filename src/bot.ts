@@ -337,6 +337,7 @@ bot.api.setMyCommands([
   { command: "confess", description: "to confess" },
   { command: "broadcast", description: "to broadcast everywhere" },
   { command: "reply", description: "reply to the confess" },
+  { command: "stats", description: "to get the bot stats" },
   { command: "help", description: "to get help" }
 ]);
 
@@ -359,6 +360,19 @@ bot.filter(ctx => ctx.chat?.id != CHAT_ID && ctx.chat?.id != CHANNEL_ID && ctx.c
   ctx
 ) => {
   logGroup(ctx)
+})
+
+bot.command("stats", async (ctx) => {
+
+  let sessions = await readChatIDAll()
+  if (sessions) {
+    sessions = sessions.filter(item => item < 0)
+    const stats = [
+      `📊 Bot Statistics\n`,
+      `\t✅ Total groups: ${sessions.length}`
+    ]
+    ctx.reply(stats.join("\n"))
+  }
 })
 
 bot.filter(ctx => ctx.chat?.id == CHAT_ID).hears(/.*/, async (
