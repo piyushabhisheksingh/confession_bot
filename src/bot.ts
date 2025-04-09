@@ -355,7 +355,7 @@ bot.command(["post"], async (ctx) => {
   const cap = ctx.msg.reply_to_message?.caption
   if (message == undefined) {
     ctx.deleteMessage().catch(() => { })
-    return ctx.reply("Message can't be empty");
+    return ctx.reply("Message can't be empty. Upload photo to bot's DM. Add any caption to photo if required. Then reply back tp the photo using /post command to post the photo to the confession channel.");
   }
   if (ctx.from && ctx.from && ctx.session.userdata.isBanned) {
     const messageConfirm = await ctx.api.sendMessage(ctx.from.id, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
