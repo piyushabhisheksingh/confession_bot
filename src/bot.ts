@@ -151,6 +151,23 @@ bot.use(startBotMenu)
 
 const reviewBotMenu = new Menu<MyContext>("review-bot");
 reviewBotMenu.text("Approve", async (ctx) => {
+  if (ctx.msg?.caption) {
+    const msg = ctx.msg?.caption ?? ""
+    const media = ctx.msg?.photo
+    const message = msg.split("\n").slice(1).join('\n')
+    if (media == undefined) return;
+    const userID = parseInt(msg.split("\n")[0], Encryption)
+    const postLink = await ctx.api.sendPhoto(CHANNEL_ID, media[0].file_id, { caption: msg })
+    const postLinkEdited = await ctx.api.editMessageCaption(CHANNEL_ID, postLink.message_id, { caption: `Confession-${userID.toString(Encryption)}-${postLink.message_id}\n` + message })
+    const userData = await readID(userID.toString())
+    if (userData == undefined) return;
+    writeID(userID.toString(), { ...userData, confessions: [{ id: postLink.message_id }, ...userData?.confessions] })
+    const messageConfirm = await ctx.api.sendMessage(userID, `Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${userID.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
+    ctx.api.pinChatMessage(userID ?? 0, messageConfirm.message_id)
+    ctx.deleteMessage().catch(() => { })
+    ctx.menu.close()
+    return
+  }
   const msg = ctx.msg?.text ?? ""
   const userID = parseInt(msg.split("\n")[0], Encryption)
   const message = msg.split("\n").slice(1).join('\n')
@@ -165,6 +182,34 @@ reviewBotMenu.text("Approve", async (ctx) => {
   ctx.menu.close()
 }).row()
 reviewBotMenu.text("Broadcast", async (ctx) => {
+  if (ctx.msg?.caption) {
+    const msg = ctx.msg?.caption ?? ""
+    const message = msg.split("\n").slice(1).join('\n')
+    const media = ctx.msg?.photo
+    if (media == undefined) return;
+    const userID = parseInt(msg.split("\n")[0], Encryption)
+    const postLink = await ctx.api.sendPhoto(CHANNEL_ID, media[0].file_id, { caption: msg })
+    const postLinkEdited = await ctx.api.editMessageCaption(CHANNEL_ID, postLink.message_id, { caption: `Confession-${userID.toString(Encryption)}-${postLink.message_id}\n` + message })
+    const userData = await readID(userID.toString())
+    if (userData == undefined) return;
+    writeID(userID.toString(), { ...userData, confessions: [{ id: postLink.message_id }, ...userData?.confessions] })
+    const messageConfirm = await ctx.api.sendMessage(userID, `Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${userID.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
+    ctx.api.pinChatMessage(userID ?? 0, messageConfirm.message_id)
+    ctx.deleteMessage().catch(() => { })
+    ctx.menu.close()
+    const groups = await readChatIDAll()
+    if (groups) {
+      const linkToComment = "https://t.me/tg_confession_channel/" + (postLink.message_id ?? "0")
+      ctx.api.pinChatMessage(CHANNEL_ID, postLink?.message_id ?? 0).catch(() => { })
+      groups.filter((id) => id < 0).forEach(async (gID) => {
+        if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID || gID == REVIEW_ID || gID == BACKUP_ID) {
+          return
+        }
+        ctx.api.sendMessage(gID, linkToComment).catch(() => { })
+      })
+    }
+    return
+  }
   const msg = ctx.msg?.text ?? ""
   const userID = parseInt(msg.split("\n")[0], Encryption)
   const message = msg.split("\n").slice(1).join('\n')
@@ -190,6 +235,14 @@ reviewBotMenu.text("Broadcast", async (ctx) => {
   }
 }).row()
 reviewBotMenu.text("Discard", async (ctx) => {
+  if (ctx.msg?.caption) {
+    const msg = ctx.msg?.caption ?? ""
+    const media = ctx.msg?.photo ?? ""
+    const userID = parseInt(msg.split("\n")[0], Encryption)
+    const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
+    ctx.menu.close()
+    return
+  }
   const msg = ctx.msg?.text ?? ""
   const userID = parseInt(msg.split("\n")[0], Encryption)
   const message = msg.split("\n").slice(1).join('\n')
@@ -198,14 +251,30 @@ reviewBotMenu.text("Discard", async (ctx) => {
 }).row()
 
 reviewBotMenu.text("Ban", async (ctx) => {
+  if (ctx.msg?.caption) {
+    const msg = ctx.msg?.caption ?? ""
+    const media = ctx.msg?.photo
+    if (media == undefined) return;
+    const userID = parseInt(msg.split("\n")[0], Encryption)
+    const userdata = await readID(userID.toString())
+    if (!userdata) {
+      return;
+    }
+    await writeID(userID.toString(), { ...userdata, isBanned: true })
+    await ctx.replyWithPhoto(media[0].file_id, { caption: `${userID} banned` + '\n' + msg })
+    const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
+    ctx.menu.close()
+    return
+  }
   const msg = ctx.msg?.text ?? ""
+
   const userID = parseInt(msg.split("\n")[0], Encryption)
   const message = msg.split("\n").slice(1).join('\n')
   const userdata = await readID(userID.toString())
-  if(!userdata){
+  if (!userdata) {
     return;
   }
-  await writeID(userID.toString(), {...userdata, isBanned: true})
+  await writeID(userID.toString(), { ...userdata, isBanned: true })
   await ctx.reply(`${userID} banned` + '\n' + message)
 
   const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
@@ -225,10 +294,10 @@ bot.filter(ctx => ctx.chatId == REVIEW_ID).command(["unban"], async (ctx) => {
   const userID = Number(ctx.match.trim());
   if (!Number.isNaN(userID)) {
     const userdata = await readID(userID.toString())
-    if(!userdata){
+    if (!userdata) {
       return;
     }
-    await writeID(userID.toString(), {...userdata, isBanned: false})
+    await writeID(userID.toString(), { ...userdata, isBanned: false })
     ctx.reply("User unbanned")
   }
 })
@@ -268,6 +337,44 @@ bot.command(["reply"], async (ctx) => {
   }
 })
 
+bot.command(["post"], async (ctx) => {
+  if (ctx.chatId != ctx.from?.id) {
+    ctx.deleteMessage().catch(() => { })
+    return replytoMsg({
+      ctx,
+      message: "Post command works only in bot DM to protect your anonimousity."
+    })
+  };
+  if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0) {
+    return replytoMsg({
+      ctx,
+      message: `You can post after ${getRemainingTime(ctx.session.userdata.confessionTime + ConfessionLimitResetTime, Date.now())}`
+    })
+  }
+  const message = ctx.msg.reply_to_message?.photo;
+  const cap = ctx.msg.reply_to_message?.caption
+  if (message == undefined) {
+    ctx.deleteMessage().catch(() => { })
+    return ctx.reply("Message can't be empty");
+  }
+  if (ctx.from && ctx.from && ctx.session.userdata.isBanned) {
+    const messageConfirm = await ctx.api.sendMessage(ctx.from.id, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
+    await ctx.api.sendPhoto(REVIEW_ID, message[0].file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
+    await ctx.api.sendPhoto(BACKUP_ID, message[0].file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
+    ctx.session.userdata.confessionTime = Date.now()
+    return;
+  }
+
+  const postLink = await ctx.api.sendPhoto(REVIEW_ID, message[0].file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap, reply_markup: reviewBotMenu })
+  const postLinkEdited = await ctx.api.editMessageCaption(REVIEW_ID, postLink.message_id, { caption: `${ctx.from.id.toString(Encryption)}\n` + cap, reply_markup: reviewBotMenu })
+
+  await ctx.api.sendPhoto(BACKUP_ID, message[0].file_id, { caption: getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + cap })
+  // ctx.session.userdata.confessions = [{ id: postLink.message_id }, ...ctx.session.userdata.confessions]
+  ctx.session.userdata.confessionTime = Date.now()
+  // const messageConfirm = await ctx.reply(`Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${ctx.from.id.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
+  // ctx.api.pinChatMessage(ctx.chatId ?? 0, messageConfirm.message_id)
+})
+
 bot.command(["confess"], async (ctx) => {
   if (ctx.chatId != ctx.from?.id) {
     ctx.deleteMessage().catch(() => { })
@@ -277,7 +384,6 @@ bot.command(["confess"], async (ctx) => {
     })
   };
   if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0) {
-    ctx.deleteMessage().catch(() => { })
     return replytoMsg({
       ctx,
       message: `You can post confession after ${getRemainingTime(ctx.session.userdata.confessionTime + ConfessionLimitResetTime, Date.now())}`
@@ -384,6 +490,7 @@ bot.api.setMyCommands([
   { command: "confess", description: "to confess" },
   { command: "broadcast", description: "to broadcast everywhere" },
   { command: "reply", description: "reply to the confess" },
+  { command: "post", description: "to post photo" },
   { command: "stats", description: "to get the bot stats" },
   { command: "help", description: "to get help" }
 ]);

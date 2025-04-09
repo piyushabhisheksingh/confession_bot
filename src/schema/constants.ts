@@ -13,6 +13,7 @@ export const msgArr = [
   "-You can use /confess <message> from the bot DM to post your confession accross groups.",
   "-You receive messages in the confession bot DM if someone replies to your confession.",
   "-You can reply back to the replies on your confessions from the bot DM by using /reply <message>.",
+  "-Upload photo in Bot's DM and reply to the photo using /post to post photo to the confession channel.",
   "-You can visit to the offical channel i.e @tg_confession_channel to see other's confessions or you can use /start to get the link to the bot and the channel."
 ]
 
