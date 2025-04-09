@@ -310,11 +310,12 @@ bot.command(["reply"], async (ctx) => {
     return;
   }
   if (ctx.chatId != ctx.from?.id) {
-    ctx.deleteMessage().catch(() => { })
-    return replytoMsg({
+    
+    replytoMsg({
       ctx,
       message: "Reply command works only in bot DM to protect your anonimousity."
     })
+    return ctx.deleteMessage().catch(() => { })
   };
   const message = ctx.match.trim();
   if (linkChecker(message)) {
@@ -339,11 +340,12 @@ bot.command(["reply"], async (ctx) => {
 
 bot.command(["post"], async (ctx) => {
   if (ctx.chatId != ctx.from?.id) {
-    ctx.deleteMessage().catch(() => { })
-    return replytoMsg({
+    
+   replytoMsg({
       ctx,
       message: "Post command works only in bot DM to protect your anonimousity."
     })
+    return ctx.deleteMessage().catch(() => { })
   };
   if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0) {
     return replytoMsg({
@@ -377,11 +379,12 @@ bot.command(["post"], async (ctx) => {
 
 bot.command(["confess"], async (ctx) => {
   if (ctx.chatId != ctx.from?.id) {
-    ctx.deleteMessage().catch(() => { })
-    return replytoMsg({
+    
+     replytoMsg({
       ctx,
       message: "Confess command works only in bot DM to protect your anonimousity."
     })
+    return ctx.deleteMessage().catch(() => { })
   };
   if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0) {
     return replytoMsg({
