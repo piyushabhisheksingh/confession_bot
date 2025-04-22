@@ -45,7 +45,8 @@ bot.use(session({
       confessionTime: 0,
       confessions: [],
       isBanned: false,
-      freeConfessions: 0
+      freeConfessions: 0,
+      refby: 0
     }),
     getSessionKey: getUserSessionKey,
     storage: confessionStorage
@@ -339,6 +340,25 @@ bot.command(["reply"], async (ctx) => {
   }
 })
 
+bot.command(["bonusinfo"], async (ctx) => {
+  if(ctx.session.userdata.freeConfessions == undefined){
+    ctx.session.userdata.freeConfessions=0
+  }
+  ctx.reply(`You have total bonus of ${ctx.session.userdata.freeConfessions} additional confessions/posts.`)
+})
+
+bot.command(["refby"], async (ctx) => {
+  if (ctx.session.userdata.refby == 0 || ctx.session.userdata.refby == undefined) {
+    if (isNaN(Number(ctx.match.trim()))) return;
+    const userinfo = await readID(ctx.match.trim())
+    if (userinfo == undefined) return;
+    ctx.session.userdata.refby = Number(ctx.match.trim())
+    writeID(ctx.match.trim(), { ...userinfo, freeConfessions: userinfo.freeConfessions != undefined ? userinfo.freeConfessions + 1 : 1 })
+    ctx.session.userdata.freeConfessions = ctx.session.userdata.freeConfessions != undefined ? ctx.session.userdata.freeConfessions + 1 : 1
+    ctx.reply("1 extra post granted to each.")
+  }
+})
+
 bot.filter(ctx => ctx.chat?.id == REVIEW_ID).command(["grant"], async (ctx) => {
   const num = ctx.match.trim().split(" ")
   if (isNaN(Number(num[0]))) return;
@@ -518,6 +538,8 @@ bot.api.setMyCommands([
   { command: "reply", description: "reply to the confess" },
   { command: "post", description: "to post photo" },
   { command: "stats", description: "to get the bot stats" },
+  { command: "refby", description: "to set referred by userID" },
+  { command: "bonusinfo", description: "to view total extra free posts" },
   { command: "help", description: "to get help" }
 ]);
 
