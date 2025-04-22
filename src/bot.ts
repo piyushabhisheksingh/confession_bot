@@ -364,7 +364,7 @@ bot.command(["post"], async (ctx) => {
   } else if (ctx.session.userdata.freeConfessions > 0) {
     ctx.session.userdata.freeConfessions = ctx.session.userdata.freeConfessions - 1
   }
-  if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0 && (ctx.session.userdata.freeConfessions == 0 && ctx.session.userdata.freeConfessions == undefined)) {
+  if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0 && (ctx.session.userdata.freeConfessions == 0 || ctx.session.userdata.freeConfessions == undefined)) {
     return replytoMsg({
       ctx,
       message: `You can post after ${getRemainingTime(ctx.session.userdata.confessionTime + ConfessionLimitResetTime, Date.now())}`
@@ -409,7 +409,7 @@ bot.command(["confess"], async (ctx) => {
   else if (ctx.session.userdata.freeConfessions > 0) {
     ctx.session.userdata.freeConfessions = ctx.session.userdata.freeConfessions - 1
   }
-  if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0 && (ctx.session.userdata.freeConfessions == 0 && ctx.session.userdata.freeConfessions == undefined)) {
+  if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0 && (ctx.session.userdata.freeConfessions == 0 || ctx.session.userdata.freeConfessions == undefined)) {
     return replytoMsg({
       ctx,
       message: `You can post confession after ${getRemainingTime(ctx.session.userdata.confessionTime + ConfessionLimitResetTime, Date.now())}`
