@@ -340,9 +340,13 @@ bot.command(["reply"], async (ctx) => {
 })
 
 bot.filter(ctx => ctx.chat?.id == REVIEW_ID).command(["grant"], async (ctx) => {
-  const num = Number(ctx.match.trim())
-  if (isNaN(num)) return;
-  ctx.session.userdata.freeConfessions = num
+  const num = ctx.match.trim().split(" ")
+  if (isNaN(Number(num[0]))) return;
+  if (isNaN(Number(num[1]))) return;
+  const userinfo = await readID(num[0])
+  if (userinfo == undefined) return;
+
+  writeID(num[0], { ...userinfo, freeConfessions: Number(num[1]) })
 })
 
 bot.command(["post"], async (ctx) => {
