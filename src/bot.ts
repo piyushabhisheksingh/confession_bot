@@ -347,6 +347,7 @@ bot.filter(ctx => ctx.chat?.id == REVIEW_ID).command(["grant"], async (ctx) => {
   if (userinfo == undefined) return;
 
   writeID(num[0], { ...userinfo, freeConfessions: Number(num[1]) })
+  ctx.reply(`${num[1]} posts granted`)
 })
 
 bot.command(["post"], async (ctx) => {
