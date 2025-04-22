@@ -44,7 +44,8 @@ bot.use(session({
     initial: () => ({
       confessionTime: 0,
       confessions: [],
-      isBanned: false
+      isBanned: false,
+      freeConfessions: 0
     }),
     getSessionKey: getUserSessionKey,
     storage: confessionStorage
@@ -310,7 +311,7 @@ bot.command(["reply"], async (ctx) => {
     return;
   }
   if (ctx.chatId != ctx.from?.id) {
-    
+
     replytoMsg({
       ctx,
       message: "Reply command works only in bot DM to protect your anonimousity."
@@ -338,16 +339,27 @@ bot.command(["reply"], async (ctx) => {
   }
 })
 
+bot.filter(ctx => ctx.chat?.id == REVIEW_ID).command(["grant"], async (ctx) => {
+  const num = Number(ctx.match.trim())
+  if (isNaN(num)) return;
+  ctx.session.userdata.freeConfessions = num
+})
+
 bot.command(["post"], async (ctx) => {
   if (ctx.chatId != ctx.from?.id) {
-    
-   replytoMsg({
+
+    replytoMsg({
       ctx,
       message: "Post command works only in bot DM to protect your anonimousity."
     })
     return ctx.deleteMessage().catch(() => { })
   };
-  if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0) {
+  if (ctx.session.userdata.freeConfessions == undefined) {
+    ctx.session.userdata.freeConfessions = 0
+  } else if (ctx.session.userdata.freeConfessions > 0) {
+    ctx.session.userdata.freeConfessions = ctx.session.userdata.freeConfessions - 1
+  }
+  if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0 && (ctx.session.userdata.freeConfessions == 0 && ctx.session.userdata.freeConfessions == undefined)) {
     return replytoMsg({
       ctx,
       message: `You can post after ${getRemainingTime(ctx.session.userdata.confessionTime + ConfessionLimitResetTime, Date.now())}`
@@ -379,14 +391,20 @@ bot.command(["post"], async (ctx) => {
 
 bot.command(["confess"], async (ctx) => {
   if (ctx.chatId != ctx.from?.id) {
-    
-     replytoMsg({
+
+    replytoMsg({
       ctx,
       message: "Confess command works only in bot DM to protect your anonimousity."
     })
     return ctx.deleteMessage().catch(() => { })
   };
-  if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0) {
+  if (ctx.session.userdata.freeConfessions == undefined) {
+    ctx.session.userdata.freeConfessions = 0
+  }
+  else if (ctx.session.userdata.freeConfessions > 0) {
+    ctx.session.userdata.freeConfessions = ctx.session.userdata.freeConfessions - 1
+  }
+  if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0 && (ctx.session.userdata.freeConfessions == 0 && ctx.session.userdata.freeConfessions == undefined)) {
     return replytoMsg({
       ctx,
       message: `You can post confession after ${getRemainingTime(ctx.session.userdata.confessionTime + ConfessionLimitResetTime, Date.now())}`
@@ -456,8 +474,8 @@ bot.filter(ctx => ctx.chat?.id == CHAT_ID).hears(/.*/, async (
     })
   }
   const forward_origin = ctx.message?.reply_to_story?.id
-  const chatID = ctx.message?.reply_to_message?.caption?.split("\n")[0] ? parseInt(ctx.message?.reply_to_message?.caption?.split("\n")[0].split('-')[1] ?? "0", Encryption): parseInt(ctx.message?.reply_to_message?.text?.split("\n")[0].split('-')[1] ?? "0", Encryption)
-  const confessionID = ctx.message?.reply_to_message?.caption?.split("\n")[0] ?? ctx.message?.reply_to_message?.text?.split("\n")[0] 
+  const chatID = ctx.message?.reply_to_message?.caption?.split("\n")[0] ? parseInt(ctx.message?.reply_to_message?.caption?.split("\n")[0].split('-')[1] ?? "0", Encryption) : parseInt(ctx.message?.reply_to_message?.text?.split("\n")[0].split('-')[1] ?? "0", Encryption)
+  const confessionID = ctx.message?.reply_to_message?.caption?.split("\n")[0] ?? ctx.message?.reply_to_message?.text?.split("\n")[0]
   const messagedBy = ctx.message?.from
   const messageID = ctx.message?.message_id ?? 0
   if (chatID == 0 || messagedBy == undefined || confessionID == undefined) return;

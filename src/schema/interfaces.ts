@@ -6,6 +6,7 @@ export interface UserData {
     }
   >
   isBanned: boolean
+  freeConfessions: number
 
 }
 export interface Config {
