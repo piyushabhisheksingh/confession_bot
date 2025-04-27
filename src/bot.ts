@@ -157,7 +157,7 @@ reviewBotMenu.text("Approve", async (ctx) => {
     const msg = ctx.msg?.caption ?? ""
     const media = ctx.msg?.photo
     const audio = ctx.msg.audio;
-    if(audio){
+    if (audio) {
       const message = msg.split("\n").slice(1).join('\n')
       const userID = parseInt(msg.split("\n")[0], Encryption)
       const postLink = await ctx.api.sendAudio(CHANNEL_ID, audio.file_id, { caption: msg })
@@ -170,7 +170,7 @@ reviewBotMenu.text("Approve", async (ctx) => {
       ctx.deleteMessage().catch(() => { })
       ctx.menu.close()
       return
-    }else{
+    } else {
       const message = msg.split("\n").slice(1).join('\n')
       if (media == undefined) return;
       const userID = parseInt(msg.split("\n")[0], Encryption)
@@ -205,7 +205,7 @@ reviewBotMenu.text("Broadcast", async (ctx) => {
     const message = msg.split("\n").slice(1).join('\n')
     const media = ctx.msg?.photo
     const audio = ctx.msg?.audio
-    if(audio){
+    if (audio) {
       const userID = parseInt(msg.split("\n")[0], Encryption)
       const postLink = await ctx.api.sendAudio(CHANNEL_ID, audio.file_id, { caption: msg })
       const postLinkEdited = await ctx.api.editMessageCaption(CHANNEL_ID, postLink.message_id, { caption: `Confession-${userID.toString(Encryption)}-${postLink.message_id}\n` + message })
@@ -229,7 +229,7 @@ reviewBotMenu.text("Broadcast", async (ctx) => {
       }
       return
 
-    }else{
+    } else {
       if (media == undefined) return;
       const userID = parseInt(msg.split("\n")[0], Encryption)
       const postLink = await ctx.api.sendPhoto(CHANNEL_ID, media[0].file_id, { caption: msg })
@@ -301,7 +301,7 @@ reviewBotMenu.text("Ban", async (ctx) => {
     const msg = ctx.msg?.caption ?? ""
     const media = ctx.msg?.photo
     const audio = ctx.msg?.audio
-    if(audio){
+    if (audio) {
       const userID = parseInt(msg.split("\n")[0], Encryption)
       const userdata = await readID(userID.toString())
       if (!userdata) {
@@ -312,7 +312,7 @@ reviewBotMenu.text("Ban", async (ctx) => {
       const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
       ctx.menu.close()
       return
-    }else{
+    } else {
       if (media == undefined) return;
       const userID = parseInt(msg.split("\n")[0], Encryption)
       const userdata = await readID(userID.toString())
@@ -325,7 +325,7 @@ reviewBotMenu.text("Ban", async (ctx) => {
       ctx.menu.close()
       return
     }
-  
+
   }
   const msg = ctx.msg?.text ?? ""
 
@@ -400,8 +400,8 @@ bot.command(["reply"], async (ctx) => {
 })
 
 bot.command(["bonusinfo"], async (ctx) => {
-  if(ctx.session.userdata.freeConfessions == undefined){
-    ctx.session.userdata.freeConfessions=0
+  if (ctx.session.userdata.freeConfessions == undefined) {
+    ctx.session.userdata.freeConfessions = 0
   }
   ctx.reply(`You have total bonus of ${ctx.session.userdata.freeConfessions} additional confessions/posts.`)
 })
@@ -452,34 +452,34 @@ bot.command(["post"], async (ctx) => {
   const message = ctx.msg.reply_to_message?.photo;
   const messageAudio = ctx.msg.reply_to_message?.audio;
   const cap = ctx.msg.reply_to_message?.caption
-  if (message == undefined && messageAudio == undefined) {
+  if (message == undefined && messageAudio == undefined && cap == undefined) {
     ctx.deleteMessage().catch(() => { })
     return ctx.reply("Message can't be empty. Upload media to bot's DM. Add any caption to media if required. Then reply back to the media using /post command to post the media to the confession channel.");
   }
   if (ctx.from && ctx.from && ctx.session.userdata.isBanned) {
     const messageConfirm = await ctx.api.sendMessage(ctx.from.id, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
-    if(messageAudio){
+    if (messageAudio) {
       await ctx.api.sendAudio(REVIEW_ID, messageAudio.file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
       await ctx.api.sendAudio(BACKUP_ID, messageAudio.file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
-    }else if (message){
+    } else if (message) {
       await ctx.api.sendPhoto(REVIEW_ID, message[0].file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
       await ctx.api.sendPhoto(BACKUP_ID, message[0].file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
     }
     ctx.session.userdata.confessionTime = Date.now()
     return;
   }
-  if(messageAudio){
-    if(messageAudio.duration>121){
+  if (messageAudio) {
+    if (messageAudio.duration > 121) {
       return ctx.reply("Audio message can't be more than 120 seconds.");
     }
     const postLink = await ctx.api.sendAudio(REVIEW_ID, messageAudio.file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap, reply_markup: reviewBotMenu })
     const postLinkEdited = await ctx.api.editMessageCaption(REVIEW_ID, postLink.message_id, { caption: `${ctx.from.id.toString(Encryption)}\n` + cap, reply_markup: reviewBotMenu })
-  
+
     await ctx.api.sendAudio(BACKUP_ID, messageAudio.file_id, { caption: getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + cap })
-  }else if (message){
+  } else if (message) {
     const postLink = await ctx.api.sendPhoto(REVIEW_ID, message[0].file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap, reply_markup: reviewBotMenu })
     const postLinkEdited = await ctx.api.editMessageCaption(REVIEW_ID, postLink.message_id, { caption: `${ctx.from.id.toString(Encryption)}\n` + cap, reply_markup: reviewBotMenu })
-  
+
     await ctx.api.sendPhoto(BACKUP_ID, message[0].file_id, { caption: getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + cap })
   }
 
