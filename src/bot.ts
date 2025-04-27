@@ -452,7 +452,7 @@ bot.command(["post"], async (ctx) => {
   const message = ctx.msg.reply_to_message?.photo;
   const messageAudio = ctx.msg.reply_to_message?.audio;
   const cap = ctx.msg.reply_to_message?.caption
-  if (message == undefined) {
+  if (message == undefined && messageAudio == undefined) {
     ctx.deleteMessage().catch(() => { })
     return ctx.reply("Message can't be empty. Upload photo to bot's DM. Add any caption to photo if required. Then reply back tp the photo using /post command to post the photo to the confession channel.");
   }
@@ -461,7 +461,7 @@ bot.command(["post"], async (ctx) => {
     if(messageAudio){
       await ctx.api.sendAudio(REVIEW_ID, messageAudio.file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
       await ctx.api.sendAudio(BACKUP_ID, messageAudio.file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
-    }else{
+    }else if (message){
       await ctx.api.sendPhoto(REVIEW_ID, message[0].file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
       await ctx.api.sendPhoto(BACKUP_ID, message[0].file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
     }
@@ -476,7 +476,7 @@ bot.command(["post"], async (ctx) => {
     const postLinkEdited = await ctx.api.editMessageCaption(REVIEW_ID, postLink.message_id, { caption: `${ctx.from.id.toString(Encryption)}\n` + cap, reply_markup: reviewBotMenu })
   
     await ctx.api.sendAudio(BACKUP_ID, messageAudio.file_id, { caption: getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + cap })
-  }else{
+  }else if (message){
     const postLink = await ctx.api.sendPhoto(REVIEW_ID, message[0].file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap, reply_markup: reviewBotMenu })
     const postLinkEdited = await ctx.api.editMessageCaption(REVIEW_ID, postLink.message_id, { caption: `${ctx.from.id.toString(Encryption)}\n` + cap, reply_markup: reviewBotMenu })
   
