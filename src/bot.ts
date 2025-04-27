@@ -454,7 +454,7 @@ bot.command(["post"], async (ctx) => {
   const cap = ctx.msg.reply_to_message?.caption
   if (message == undefined && messageAudio == undefined) {
     ctx.deleteMessage().catch(() => { })
-    return ctx.reply("Message can't be empty. Upload photo to bot's DM. Add any caption to photo if required. Then reply back tp the photo using /post command to post the photo to the confession channel.");
+    return ctx.reply("Message can't be empty. Upload media to bot's DM. Add any caption to media if required. Then reply back to the media using /post command to post the media to the confession channel.");
   }
   if (ctx.from && ctx.from && ctx.session.userdata.isBanned) {
     const messageConfirm = await ctx.api.sendMessage(ctx.from.id, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
@@ -611,7 +611,7 @@ bot.api.setMyCommands([
   { command: "confess", description: "to confess" },
   { command: "broadcast", description: "to broadcast everywhere" },
   { command: "reply", description: "reply to the confess" },
-  { command: "post", description: "to post photo" },
+  { command: "post", description: "to post media" },
   { command: "stats", description: "to get the bot stats" },
   { command: "refby", description: "to set referred by userID" },
   { command: "bonusinfo", description: "to view total extra free posts" },
