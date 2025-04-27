@@ -440,8 +440,6 @@ bot.command(["post"], async (ctx) => {
   };
   if (ctx.session.userdata.freeConfessions == undefined) {
     ctx.session.userdata.freeConfessions = 0
-  } else if (ctx.session.userdata.freeConfessions > 0) {
-    ctx.session.userdata.freeConfessions = ctx.session.userdata.freeConfessions - 1
   }
   if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0 && (ctx.session.userdata.freeConfessions == 0 || ctx.session.userdata.freeConfessions == undefined)) {
     return replytoMsg({
@@ -449,6 +447,7 @@ bot.command(["post"], async (ctx) => {
       message: `You can post after ${getRemainingTime(ctx.session.userdata.confessionTime + ConfessionLimitResetTime, Date.now())}`
     })
   }
+
   const message = ctx.msg.reply_to_message?.photo;
   const messageAudio = ctx.msg.reply_to_message?.audio;
   const cap = ctx.msg.reply_to_message?.caption
@@ -468,6 +467,7 @@ bot.command(["post"], async (ctx) => {
     ctx.session.userdata.confessionTime = Date.now()
     return;
   }
+  
   if (messageAudio) {
     if (messageAudio.duration > 121) {
       return ctx.reply("Audio message can't be more than 120 seconds.");
@@ -481,6 +481,9 @@ bot.command(["post"], async (ctx) => {
     const postLinkEdited = await ctx.api.editMessageCaption(REVIEW_ID, postLink.message_id, { caption: `${ctx.from.id.toString(Encryption)}\n` + cap, reply_markup: reviewBotMenu })
 
     await ctx.api.sendPhoto(BACKUP_ID, message[0].file_id, { caption: getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + cap })
+  }
+  if ((ctx.session.userdata.freeConfessions > 0) && ((Date.now() - ctx.session.userdata.confessionTime) < ConfessionLimitResetTime)) {
+    ctx.session.userdata.freeConfessions = ctx.session.userdata.freeConfessions - 1
   }
 
   // ctx.session.userdata.confessions = [{ id: postLink.message_id }, ...ctx.session.userdata.confessions]
@@ -500,9 +503,6 @@ bot.command(["confess"], async (ctx) => {
   };
   if (ctx.session.userdata.freeConfessions == undefined) {
     ctx.session.userdata.freeConfessions = 0
-  }
-  else if (ctx.session.userdata.freeConfessions > 0) {
-    ctx.session.userdata.freeConfessions = ctx.session.userdata.freeConfessions - 1
   }
   if (Date.now() - ctx.session.userdata.confessionTime < ConfessionLimitResetTime && ctx.session.userdata.confessionTime != 0 && (ctx.session.userdata.freeConfessions == 0 || ctx.session.userdata.freeConfessions == undefined)) {
     return replytoMsg({
@@ -531,6 +531,9 @@ bot.command(["confess"], async (ctx) => {
   const postLinkEdited = await ctx.api.editMessageText(REVIEW_ID, postLink.message_id, `${ctx.from.id.toString(Encryption)}\n` + message, { reply_markup: reviewBotMenu })
   await ctx.api.sendMessage(BACKUP_ID, getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + message)
   // ctx.session.userdata.confessions = [{ id: postLink.message_id }, ...ctx.session.userdata.confessions]
+  if ((ctx.session.userdata.freeConfessions > 0) && ((Date.now() - ctx.session.userdata.confessionTime) < ConfessionLimitResetTime)) {
+    ctx.session.userdata.freeConfessions = ctx.session.userdata.freeConfessions - 1
+  }
   ctx.session.userdata.confessionTime = Date.now()
   // const messageConfirm = await ctx.reply(`Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${ctx.from.id.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
   // ctx.api.pinChatMessage(ctx.chatId ?? 0, messageConfirm.message_id)
