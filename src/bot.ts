@@ -469,8 +469,8 @@ bot.command(["post"], async (ctx) => {
     return;
   }
   if(messageAudio){
-    if(messageAudio.duration>61){
-      return ctx.reply("Audio message can't be more than 60 seconds.");
+    if(messageAudio.duration>121){
+      return ctx.reply("Audio message can't be more than 120 seconds.");
     }
     const postLink = await ctx.api.sendAudio(REVIEW_ID, messageAudio.file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap, reply_markup: reviewBotMenu })
     const postLinkEdited = await ctx.api.editMessageCaption(REVIEW_ID, postLink.message_id, { caption: `${ctx.from.id.toString(Encryption)}\n` + cap, reply_markup: reviewBotMenu })
