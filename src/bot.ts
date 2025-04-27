@@ -207,7 +207,7 @@ reviewBotMenu.text("Broadcast", async (ctx) => {
     const audio = ctx.msg?.audio
     if(audio){
       const userID = parseInt(msg.split("\n")[0], Encryption)
-      const postLink = await ctx.api.sendPhoto(CHANNEL_ID, audio.file_id, { caption: msg })
+      const postLink = await ctx.api.sendAudio(CHANNEL_ID, audio.file_id, { caption: msg })
       const postLinkEdited = await ctx.api.editMessageCaption(CHANNEL_ID, postLink.message_id, { caption: `Confession-${userID.toString(Encryption)}-${postLink.message_id}\n` + message })
       const userData = await readID(userID.toString())
       if (userData == undefined) return;
