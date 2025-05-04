@@ -171,7 +171,7 @@ reviewBotMenu.text("Approve", async (ctx) => {
       ctx.deleteMessage().catch(() => { })
       ctx.menu.close()
       return
-    } else  if (voice) {
+    } else if (voice) {
       const message = msg.split("\n").slice(1).join('\n')
       const userID = parseInt(msg.split("\n")[0], Encryption)
       const postLink = await ctx.api.sendVoice(CHANNEL_ID, voice.file_id, { caption: msg })
@@ -490,7 +490,7 @@ bot.command(["post"], async (ctx) => {
   const message = ctx.msg.reply_to_message?.photo;
   const messageAudio = ctx.msg.reply_to_message?.audio;
   const messageVoice = ctx.msg.reply_to_message?.voice;
-  const cap = ctx.msg.reply_to_message?.caption
+  const cap = ctx.msg.reply_to_message?.caption ?? ""
   if (message == undefined && messageAudio == undefined && messageVoice == undefined) {
     ctx.deleteMessage().catch(() => { })
     return ctx.reply("Message can't be empty. Upload media to bot's DM. Add any caption to media if required. Then reply back to the media using /post command to post the media to the confession channel.");
@@ -500,18 +500,18 @@ bot.command(["post"], async (ctx) => {
     if (messageAudio) {
       await ctx.api.sendAudio(REVIEW_ID, messageAudio.file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
       await ctx.api.sendAudio(BACKUP_ID, messageAudio.file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
-    }else if (messageVoice) {
+    } else if (messageVoice) {
       await ctx.api.sendVoice(REVIEW_ID, messageVoice.file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
       await ctx.api.sendVoice(BACKUP_ID, messageVoice.file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
     }
-     else if (message) {
+    else if (message) {
       await ctx.api.sendPhoto(REVIEW_ID, message[0].file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
       await ctx.api.sendPhoto(BACKUP_ID, message[0].file_id, { caption: getGrammyName(ctx.from) + '\n' + ctx.from.id + '\n' + '@' + ctx.from.username + '\n' + cap })
     }
     ctx.session.userdata.confessionTime = Date.now()
     return;
   }
-  
+
   if (messageAudio) {
     if (messageAudio.duration > 121) {
       return ctx.reply("Audio message can't be more than 120 seconds.");
@@ -520,7 +520,7 @@ bot.command(["post"], async (ctx) => {
     const postLinkEdited = await ctx.api.editMessageCaption(REVIEW_ID, postLink.message_id, { caption: `${ctx.from.id.toString(Encryption)}\n` + cap, reply_markup: reviewBotMenu })
 
     await ctx.api.sendAudio(BACKUP_ID, messageAudio.file_id, { caption: getGrammyName(ctx.from) + '\n' + getGrammyLink(ctx.from) + '\n' + '@' + ctx.from.username + '\n' + cap })
-  }else if (messageVoice) {
+  } else if (messageVoice) {
     if (messageVoice.duration > 121) {
       return ctx.reply("Audio message can't be more than 120 seconds.");
     }
