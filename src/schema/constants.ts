@@ -21,7 +21,7 @@ export const msgArr = [
 
 export const CofessionsDailyLimit = 1
 
-export const ConfessionLimitResetTime = 86400000 / (4)
+export const ConfessionLimitResetTime = 86400000 / (24)
 
 export const LOG_GROUP_ID = -1002411523907
 export const CHAT_ID = -1002385443108
