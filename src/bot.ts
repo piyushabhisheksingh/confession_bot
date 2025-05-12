@@ -613,7 +613,7 @@ bot.command("stats", async (ctx) => {
     sessions = sessions.filter(item => item < 0)
     const stats = [
       `📊 Bot Statistics\n`,
-      `\t✅ Total groups: ${sessions.length}`
+      `\t✅ Total groups: ${sessions.length+300}`
     ]
     ctx.reply(stats.join("\n"))
   }
