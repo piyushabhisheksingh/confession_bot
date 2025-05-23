@@ -445,6 +445,9 @@ bot.command(["bonusinfo"], async (ctx) => {
   ctx.reply(`You have total bonus of ${ctx.session.userdata.freeConfessions} additional confessions/posts.`)
 })
 
+bot.command(["play", "stop"], (ctx) => {
+})
+
 bot.command(["refby"], async (ctx) => {
   if (ctx.session.userdata.refby == 0 || ctx.session.userdata.refby == undefined) {
     if (isNaN(Number(ctx.match.trim()))) return;
