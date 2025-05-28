@@ -665,17 +665,17 @@ bot.command("help", (ctx) => {
 })
 
 
-bot.api.setMyCommands([
-  { command: "start", description: "to start" },
-  { command: "confess", description: "to confess" },
-  { command: "broadcast", description: "to broadcast everywhere" },
-  { command: "reply", description: "reply to the confess" },
-  { command: "post", description: "to post media" },
-  { command: "stats", description: "to get the bot stats" },
-  { command: "refby", description: "to set referred by userID" },
-  { command: "bonusinfo", description: "to view total extra free posts" },
-  { command: "help", description: "to get help" }
-]);
+// bot.api.setMyCommands([
+//   { command: "start", description: "to start" },
+//   { command: "confess", description: "to confess" },
+//   { command: "broadcast", description: "to broadcast everywhere" },
+//   { command: "reply", description: "reply to the confess" },
+//   { command: "post", description: "to post media" },
+//   { command: "stats", description: "to get the bot stats" },
+//   { command: "refby", description: "to set referred by userID" },
+//   { command: "bonusinfo", description: "to view total extra free posts" },
+//   { command: "help", description: "to get help" }
+// ]);
 
 // catch Errors
 bot.catch((err) => {
