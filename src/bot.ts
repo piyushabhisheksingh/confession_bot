@@ -632,7 +632,6 @@ bot.filter(ctx => ctx.chat?.id == CHAT_ID).hears(/.*/, async (
     })
   }
   const forward_origin = ctx.message?.reply_to_story?.id
-  if(forward_origin == undefined)  return;
   const chatID = ctx.message?.reply_to_message?.caption?.split("\n")[0] ? parseInt(ctx.message?.reply_to_message?.caption?.split("\n")[0].split('-')[1] ?? "0", Encryption) : parseInt(ctx.message?.reply_to_message?.text?.split("\n")[0].split('-')[1] ?? "0", Encryption)
   const confessionID = ctx.message?.reply_to_message?.caption?.split("\n")[0] ?? ctx.message?.reply_to_message?.text?.split("\n")[0]
   const messagedBy = ctx.message?.from
