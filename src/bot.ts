@@ -105,7 +105,7 @@ bot.api.config.use(throttler);
 bot.use(limit({
   // Allow only 5 messages to be handled every 2 seconds.
   timeFrame: 2000,
-  limit: 3,
+  limit: 2,
 
   // This is called when the limit is exceeded.
   onLimitExceeded: async (ctx) => {
