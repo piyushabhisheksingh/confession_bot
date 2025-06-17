@@ -199,19 +199,20 @@ reviewBotMenu.text("Approve", async (ctx) => {
       ctx.menu.close()
       return
     }
+  } else {
+    const msg = ctx.msg?.text ?? ""
+    const userID = parseInt(msg.split("\n")[0], Encryption)
+    const message = msg.split("\n").slice(1).join('\n')
+    const postLink = await ctx.api.sendMessage(CHANNEL_ID, message)
+    const postLinkEdited = await ctx.api.editMessageText(CHANNEL_ID, postLink.message_id, `Confession-${userID.toString(Encryption)}-${postLink.message_id}\n` + message)
+    const userData = await readID(userID.toString())
+    if (userData == undefined) return;
+    writeID(userID.toString(), { ...userData, confessions: [{ id: postLink.message_id }, ...userData?.confessions] })
+    const messageConfirm = await ctx.api.sendMessage(userID, `Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${userID.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
+    ctx.api.pinChatMessage(userID ?? 0, messageConfirm.message_id)
+    ctx.deleteMessage().catch(() => { })
+    ctx.menu.close()
   }
-  const msg = ctx.msg?.text ?? ""
-  const userID = parseInt(msg.split("\n")[0], Encryption)
-  const message = msg.split("\n").slice(1).join('\n')
-  const postLink = await ctx.api.sendMessage(CHANNEL_ID, message)
-  const postLinkEdited = await ctx.api.editMessageText(CHANNEL_ID, postLink.message_id, `Confession-${userID.toString(Encryption)}-${postLink.message_id}\n` + message)
-  const userData = await readID(userID.toString())
-  if (userData == undefined) return;
-  writeID(userID.toString(), { ...userData, confessions: [{ id: postLink.message_id }, ...userData?.confessions] })
-  const messageConfirm = await ctx.api.sendMessage(userID, `Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${userID.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
-  ctx.api.pinChatMessage(userID ?? 0, messageConfirm.message_id)
-  ctx.deleteMessage().catch(() => { })
-  ctx.menu.close()
 }).row()
 reviewBotMenu.text("Broadcast", async (ctx) => {
   if (ctx.msg?.caption) {
@@ -294,30 +295,33 @@ reviewBotMenu.text("Broadcast", async (ctx) => {
       return
 
     }
+  } else {
+    const msg = ctx.msg?.text ?? ""
+    const userID = parseInt(msg.split("\n")[0], Encryption)
+    const message = msg.split("\n").slice(1).join('\n')
+    const postLink = await ctx.api.sendMessage(CHANNEL_ID, message)
+    const postLinkEdited = await ctx.api.editMessageText(CHANNEL_ID, postLink.message_id, `Confession-${userID.toString(Encryption)}-${postLink.message_id}\n` + message)
+    const userData = await readID(userID.toString())
+    if (userData == undefined) return;
+    writeID(userID.toString(), { ...userData, confessions: [{ id: postLink.message_id }, ...userData?.confessions] })
+    const messageConfirm = await ctx.api.sendMessage(userID, `Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${userID.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
+    ctx.api.pinChatMessage(userID ?? 0, messageConfirm.message_id)
+    ctx.deleteMessage().catch(() => { })
+    ctx.menu.close()
+    const groups = await readChatIDAll()
+    if (groups) {
+      const linkToComment = "https://t.me/tg_confession_channel/" + (postLink.message_id ?? "0")
+      ctx.api.pinChatMessage(CHANNEL_ID, postLink?.message_id ?? 0).catch(() => { })
+      groups.filter((id) => id < 0).forEach(async (gID) => {
+        if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID || gID == REVIEW_ID || gID == BACKUP_ID) {
+          return
+        }
+        ctx.api.sendMessage(gID, linkToComment).catch(() => { })
+      })
+    }
+
   }
-  const msg = ctx.msg?.text ?? ""
-  const userID = parseInt(msg.split("\n")[0], Encryption)
-  const message = msg.split("\n").slice(1).join('\n')
-  const postLink = await ctx.api.sendMessage(CHANNEL_ID, message)
-  const postLinkEdited = await ctx.api.editMessageText(CHANNEL_ID, postLink.message_id, `Confession-${userID.toString(Encryption)}-${postLink.message_id}\n` + message)
-  const userData = await readID(userID.toString())
-  if (userData == undefined) return;
-  writeID(userID.toString(), { ...userData, confessions: [{ id: postLink.message_id }, ...userData?.confessions] })
-  const messageConfirm = await ctx.api.sendMessage(userID, `Confession broadcasted\\. You can see your confession here\\. [${escapeMetaCharacters(`Confession-${userID.toString(Encryption)}-${postLink.message_id}`)}](${"https://t.me/tg_confession_channel/" + postLink.message_id})\\!`, { parse_mode: "MarkdownV2" });
-  ctx.api.pinChatMessage(userID ?? 0, messageConfirm.message_id)
-  ctx.deleteMessage().catch(() => { })
-  ctx.menu.close()
-  const groups = await readChatIDAll()
-  if (groups) {
-    const linkToComment = "https://t.me/tg_confession_channel/" + (postLink.message_id ?? "0")
-    ctx.api.pinChatMessage(CHANNEL_ID, postLink?.message_id ?? 0).catch(() => { })
-    groups.filter((id) => id < 0).forEach(async (gID) => {
-      if (gID == CHANNEL_ID || gID == LOG_GROUP_ID || gID == CHAT_ID || gID == REVIEW_ID || gID == BACKUP_ID) {
-        return
-      }
-      ctx.api.sendMessage(gID, linkToComment).catch(() => { })
-    })
-  }
+
 }).row()
 reviewBotMenu.text("Discard", async (ctx) => {
   if (ctx.msg?.caption) {
@@ -327,12 +331,14 @@ reviewBotMenu.text("Discard", async (ctx) => {
     const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
     ctx.menu.close()
     return
+  } else {
+    const msg = ctx.msg?.text ?? ""
+    const userID = parseInt(msg.split("\n")[0], Encryption)
+    const message = msg.split("\n").slice(1).join('\n')
+    const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot as it did not passed the review`, { parse_mode: "MarkdownV2" });
+    ctx.menu.close()
   }
-  const msg = ctx.msg?.text ?? ""
-  const userID = parseInt(msg.split("\n")[0], Encryption)
-  const message = msg.split("\n").slice(1).join('\n')
-  const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot as it did not passed the review`, { parse_mode: "MarkdownV2" });
-  ctx.menu.close()
+
 }).row()
 
 reviewBotMenu.text("Ban", async (ctx) => {
@@ -365,20 +371,22 @@ reviewBotMenu.text("Ban", async (ctx) => {
       return
     }
 
-  }
-  const msg = ctx.msg?.text ?? ""
+  } else {
+    const msg = ctx.msg?.text ?? ""
 
-  const userID = parseInt(msg.split("\n")[0], Encryption)
-  const message = msg.split("\n").slice(1).join('\n')
-  const userdata = await readID(userID.toString())
-  if (!userdata) {
-    return;
-  }
-  await writeID(userID.toString(), { ...userdata, isBanned: true })
-  await ctx.reply(`${userID} banned` + '\n' + message)
+    const userID = parseInt(msg.split("\n")[0], Encryption)
+    const message = msg.split("\n").slice(1).join('\n')
+    const userdata = await readID(userID.toString())
+    if (!userdata) {
+      return;
+    }
+    await writeID(userID.toString(), { ...userdata, isBanned: true })
+    await ctx.reply(`${userID} banned` + '\n' + message)
 
-  const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
-  ctx.menu.close()
+    const messageConfirm = await ctx.api.sendMessage(userID, `Content discarded by the bot due to suspected activities`, { parse_mode: "MarkdownV2" });
+    ctx.menu.close()
+  }
+
 }).row()
 
 bot.use(reviewBotMenu)
@@ -683,7 +691,7 @@ bot.catch((err) => {
   const e = err.error;
   if (e instanceof GrammyError) {
     // oopsError(ctx)
-    console.error("Error in request:", e.description);
+    console.error("Error in request:", e);
   } else if (e instanceof HttpError) {
     // oopsError(ctx)
     console.error("Could not contact Telegram:", e);
