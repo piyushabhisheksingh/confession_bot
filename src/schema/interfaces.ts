@@ -12,6 +12,8 @@ export interface UserData {
 }
 export interface Config {
   isLogged: boolean,
+  threadId?: number,
+  nextLogTryAt?: number,
 }
 
 
@@ -19,4 +21,3 @@ export interface SessionData {
   userdata: UserData
   config: Config
 }
-

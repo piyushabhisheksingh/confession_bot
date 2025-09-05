@@ -16,13 +16,16 @@
     "@grammyjs/storage-supabase": "^2.4.2",
     "@grammyjs/transformer-throttler": "^1.2.1",
     "base-64": "^1.0.0",
+    "bottleneck": "^2.19.5",
     "grammy": "^1.31.0",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "pg": "^8.12.0"
   },
   "devDependencies": {
     "@types/base-64": "^1.0.2",
     "@types/lodash": "^4.17.13",
     "@types/node": "^22.10.2",
+    "@types/pg": "^8.15.5",
     "dotenv": "^10.0.0",
     "nodemon": "^2.0.15",
     "ts-node": "^10.9.2",
@@ -32,6 +35,9 @@
     "start": "ts-node src/bot.ts",
     "dev": "nodemon src/bot.ts",
     "build": "npx tsc",
+    "db:print-sql": "node -e \"console.log(require('fs').readFileSync('scripts/sql/001_init.sql','utf8'))\"",
+    "db:migrate": "ts-node scripts/migrate.ts",
+    "db:backfill-post-map": "ts-node scripts/backfill_post_user_map.ts",
     "lint": "eslint . --cache --ext .ts,.js",
     "format": "prettier --write 'src/**/*.ts'"
   }
