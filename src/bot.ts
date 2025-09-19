@@ -14,20 +14,43 @@ import { SessionData } from "./schema/interfaces";
 import { confessionStorage, readChatIDAll, readID, settingsStorage, writeID, readConfig, writeConfig, deleteChatID, startChatIdsBackgroundRefresh, getDbCacheStats, resetDbCacheStats, findUserIdByPostId, mapPostToUser, getUserByPostMap } from "./services/db";
 
 // Helper: send to groups/chats, handling forums (topics) and channels gracefully
+type PostUserCacheEntry = { uid: number; ts: number; header?: string; canonicalPostId: number };
 const POST_USER_TTL = 24 * 60 * 60 * 1000; // 24h
-const postUserCache = new Map<number, { uid: number; ts: number }>();
-const rememberPostUser = (postId: number, uid: number) => {
+const postUserCache = new Map<number, PostUserCacheEntry>();
+const rememberPostUser = (postId: number, uid: number, info?: { header?: string; canonicalPostId?: number }) => {
   if (!postId || !uid) return;
-  postUserCache.set(postId, { uid, ts: Date.now() });
+  const canonicalPostId = info?.canonicalPostId ?? postId;
+  const header = info?.header;
+  postUserCache.set(postId, { uid, ts: Date.now(), canonicalPostId, header });
 };
-const getPostUser = (postId: number): number | undefined => {
-  const e = postUserCache.get(postId);
-  if (!e) return undefined;
-  if (Date.now() - e.ts > POST_USER_TTL) {
+const getPostUser = (postId: number): PostUserCacheEntry | undefined => {
+  const entry = postUserCache.get(postId);
+  if (!entry) return undefined;
+  if (Date.now() - entry.ts > POST_USER_TTL) {
     postUserCache.delete(postId);
     return undefined;
   }
-  return e.uid;
+  return entry;
+};
+
+type ConfessionMeta = { userId: number; postMsgId: number; header: string };
+const extractConfessionMeta = (message: any): ConfessionMeta | undefined => {
+  if (!message) return undefined;
+  const bodyRaw = typeof message?.caption === 'string' && message.caption.includes('Confession-')
+    ? message.caption
+    : typeof message?.text === 'string'
+      ? message.text
+      : undefined;
+  if (!bodyRaw) return undefined;
+  const match = /Confession-([A-Za-z0-9]+)-(\d+)/.exec(bodyRaw);
+  if (!match) return undefined;
+  const encUser = match[1];
+  const postStr = match[2];
+  const userId = parseInt(encUser, Encryption);
+  const postMsgId = Number(postStr) || 0;
+  if (Number.isNaN(userId) || postMsgId <= 0) return undefined;
+  const headerLine = bodyRaw.split('\n').find((l: string) => l.startsWith('Confession-')) || `Confession-${encUser}-${postStr}`;
+  return { userId, postMsgId, header: headerLine };
 };
 const topicCache = new Map<number, number | undefined>();
 async function safeBroadcastToChat(api: any, chatId: number, text: string) {
@@ -887,27 +910,42 @@ bot.filter(ctx => ctx.chat?.id == CHAT_ID).hears(/.*/, async (
       message: `${getGrammyNameLink(ctx.from)}\\, message deleted as it contains link\\.`
     })
   }
+  const msgAny: any = ctx.message;
+  const autoForwardMeta = (msgAny?.is_automatic_forward && msgAny?.forward_from_chat?.id === CHANNEL_ID)
+    ? extractConfessionMeta(msgAny)
+    : undefined;
+  if (autoForwardMeta) {
+    const threadRootId = msgAny?.message_id ?? 0;
+    rememberPostUser(autoForwardMeta.postMsgId, autoForwardMeta.userId, { header: autoForwardMeta.header, canonicalPostId: autoForwardMeta.postMsgId });
+    mapPostToUser(autoForwardMeta.postMsgId, autoForwardMeta.userId).catch(() => {});
+    if (threadRootId > 0) {
+      rememberPostUser(threadRootId, autoForwardMeta.userId, { header: autoForwardMeta.header, canonicalPostId: autoForwardMeta.postMsgId });
+      mapPostToUser(threadRootId, autoForwardMeta.userId).catch(() => {});
+    }
+    return;
+  }
   // Handle replies to replies: walk up the chain to find the original header
-  const findHeader = (m: any): { userId: number, postMsgId: number, header: string } | undefined => {
+  const findHeader = (m: any): ConfessionMeta | undefined => {
     let cur = m;
     let depth = 0;
     while (cur && depth < 25) {
-      const body = (cur?.caption ?? cur?.text ?? '') as string;
-      const match = /Confession-([A-Za-z0-9]+)-(\d+)/.exec(body);
-      if (match) {
-        const encUser = match[1];
-        const postStr = match[2];
-        const userId = parseInt(encUser, Encryption);
-        const postMsgId = Number(postStr) || 0;
-        if (!Number.isNaN(userId) && postMsgId > 0) {
-          const headerLine = body.split('\n').find(l => l.startsWith('Confession-')) || `Confession-${encUser}-${postStr}`;
-          return { userId, postMsgId, header: headerLine };
+      const meta = extractConfessionMeta(cur);
+      if (meta) {
+        const threadMessageId = cur?.message_id ?? 0;
+        if (threadMessageId > 0) {
+          rememberPostUser(threadMessageId, meta.userId, { header: meta.header, canonicalPostId: meta.postMsgId });
+          mapPostToUser(threadMessageId, meta.userId).catch(() => {});
         }
+        rememberPostUser(meta.postMsgId, meta.userId, { header: meta.header, canonicalPostId: meta.postMsgId });
+        mapPostToUser(meta.postMsgId, meta.userId).catch(() => {});
+        return meta;
       }
       cur = cur?.reply_to_message;
       depth++;
     }
-    console.warn('hears: could not locate Confession header in reply chain', { chat: ctx.chat?.id, msg: ctx.message?.message_id });
+    if (m) {
+      console.warn('hears: could not locate Confession header in reply chain', { chat: ctx.chat?.id, msg: ctx.message?.message_id });
+    }
     return undefined;
   };
 
@@ -922,21 +960,49 @@ bot.filter(ctx => ctx.chat?.id == CHAT_ID).hears(/.*/, async (
   } else {
     // Fallback: use thread id from message to map back to user via DB
     const threadId = ctx.message?.message_thread_id ?? ctx.message?.reply_to_message?.message_thread_id ?? 0;
-    if (threadId > 0) {
-      const cachedUid = getPostUser(threadId);
-      const mappedUid = await getUserByPostMap(threadId);
-      const uid = cachedUid ?? mappedUid ?? await findUserIdByPostId(threadId);
+    const forwardedPostRaw = (ctx.message?.reply_to_message as any)?.forward_from_message_id;
+    const forwardedPostId = typeof forwardedPostRaw === 'number' ? forwardedPostRaw : 0;
+    const threadEntry = threadId > 0 ? getPostUser(threadId) : undefined;
+    const forwardedEntry = forwardedPostId > 0 ? getPostUser(forwardedPostId) : undefined;
+    const mappedThreadUid = threadId > 0 ? await getUserByPostMap(threadId) : undefined;
+    const mappedForwardUid = forwardedPostId > 0 ? await getUserByPostMap(forwardedPostId) : undefined;
+    let uid = threadEntry?.uid ?? mappedThreadUid;
+    let canonicalPostId = threadEntry?.canonicalPostId ?? forwardedEntry?.canonicalPostId ?? (forwardedPostId || threadId);
+    let headerLine = threadEntry?.header ?? forwardedEntry?.header;
+
+    if (!uid && forwardedPostId > 0) {
+      uid = mappedForwardUid ?? await findUserIdByPostId(forwardedPostId);
       if (uid) {
-        chatID = uid;
-        confessionID = `Confession-${uid.toString(Encryption)}-${threadId}`;
-        postMsgId = threadId;
-      } else {
-        console.warn('hears-fallback: could not map threadId to user', {
-          chat: ctx.chat?.id,
-          threadId,
-          msg: ctx.message?.message_id
-        });
+        canonicalPostId = forwardedEntry?.canonicalPostId ?? forwardedPostId;
       }
+    }
+
+    if (!uid && threadId > 0) {
+      uid = await findUserIdByPostId(threadId);
+    }
+
+    if (uid) {
+      chatID = uid;
+      if (!canonicalPostId || canonicalPostId <= 0) canonicalPostId = threadId > 0 ? threadId : forwardedPostId;
+      if (!headerLine) {
+        headerLine = `Confession-${uid.toString(Encryption)}-${canonicalPostId}`;
+      }
+      confessionID = headerLine;
+      postMsgId = canonicalPostId;
+      if (threadId > 0) {
+        rememberPostUser(threadId, uid, { header: headerLine, canonicalPostId });
+        mapPostToUser(threadId, uid).catch(() => {});
+      }
+      if (forwardedPostId > 0) {
+        rememberPostUser(forwardedPostId, uid, { header: headerLine, canonicalPostId });
+        mapPostToUser(forwardedPostId, uid).catch(() => {});
+      }
+    } else if (threadId > 0) {
+      console.warn('hears-fallback: could not map threadId to user', {
+        chat: ctx.chat?.id,
+        threadId,
+        msg: ctx.message?.message_id
+      });
     }
   }
   const messagedBy = ctx.message?.from
