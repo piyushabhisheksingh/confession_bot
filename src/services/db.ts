@@ -1,5 +1,6 @@
 import { supabaseAdapter } from "@grammyjs/storage-supabase";
 import { createClient } from '@supabase/supabase-js';
+import type { StorageAdapter } from "grammy";
 import { Config, UserData } from "../schema/interfaces";
 
 const TableName1 = 'session'
@@ -20,10 +21,64 @@ export const confessionStorage = supabaseAdapter<UserData>({
   table: TableName1, // the defined table name you want to use to store your session
 });
 
+const isNoRowsError = (error: any) => {
+  if (!error) return false;
+  return error.code === 'PGRST116' || /0 rows/i.test(String(error.details || error.message || ''));
+};
+
+const jsonColumnStorage = <T>(
+  table: string,
+  column: string,
+  options?: { invalidate?: () => void; init?: () => T }
+) => {
+  const invalidate = options?.invalidate;
+  const init = options?.init;
+  return {
+    async read(id: string) {
+      const numId = Number(id);
+      if (!Number.isFinite(numId)) return undefined;
+      const { data, error } = await supabase.from(table).select(column).eq('id', numId).single();
+      if (error && !isNoRowsError(error)) {
+        console.error(`Failed to read ${table}.${column} for id ${id}`, error);
+        return undefined;
+      }
+      const raw = (data as any)?.[column];
+      if (typeof raw === 'string' && raw.length > 0) {
+        try {
+          return JSON.parse(raw) as T;
+        } catch {
+          return undefined;
+        }
+      }
+      if (init) {
+        const fallback = init();
+        const input: any = { id: numId, [column]: JSON.stringify(fallback) };
+        await supabase.from(table).upsert(input);
+        invalidate?.();
+        return fallback;
+      }
+      return undefined;
+    },
+    async write(id: string, value: T) {
+      const numId = Number(id);
+      if (!Number.isFinite(numId)) return;
+      const input: any = { id: numId, [column]: JSON.stringify(value) };
+      await supabase.from(table).upsert(input);
+      invalidate?.();
+    },
+    async delete(id: string) {
+      const numId = Number(id);
+      if (!Number.isFinite(numId)) return;
+      await supabase.from(table).delete().eq('id', numId);
+      invalidate?.();
+    }
+  } as StorageAdapter<T>;
+};
+
 //create storage
-export const settingsStorage = supabaseAdapter<Config>({
-  supabase,
-  table: TableName2, // the defined table name you want to use to store your session
+export const settingsStorage = jsonColumnStorage<Config>(TableName2, 'value', {
+  invalidate: invalidateChatIdsCache,
+  init: () => ({ isLogged: false })
 });
 
 // --- lightweight caches to reduce Supabase calls ---
@@ -47,7 +102,7 @@ export const invalidateUserCache = (id?: string) => {
   else userCache.clear();
 }
 
-export const invalidateChatIdsCache = () => {
+export function invalidateChatIdsCache() {
   chatIdsCache = null;
 }
 
